@@ -1,0 +1,7 @@
+# Data folder
+Data/
+
+# Python files
+__pycache__/
+Scripts/__pycache__/
+
