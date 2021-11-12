@@ -1,0 +1,85 @@
+---
+title: "ML3P - ENEM 2019 CH"
+author: "Vitoria Guardieiro"
+date: "11/10/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ltm)
+library(CTT)
+library(Metrics)
+require(irtoys)
+```
+
+## R Markdown
+
+```{r}
+enem <- read.csv(file='../Data/Processed/ENEM_2019_CH_Azul.csv')
+enem.itens <- enem[,2:45]
+enem.true_scores <- enem[,1]
+head(enem.itens)
+```
+```{r}
+m <- mean(enem.true_scores,na.rm=TRUE)
+std<-sd(enem.true_scores,na.rm=TRUE)
+hist(enem.true_scores, main="Histograma de Proeficiência",xlab="Proeficiência",plot = TRUE, freq = F)  
+abline(v = mean(enem.true_scores),                       # Add line for mean
+       col = "blue",
+       lwd = 2)
+```
+
+
+
+```{r}
+dsc <- descript(enem.itens[1:30000,])
+dsc
+```
+
+## Estimar parâmetros ML3P
+
+Por limitações técnicas, estimo com apenas $30.000$ provas.
+
+```{r}
+fit <- est(enem.itens[1:30000,], model = "3PL", engine = "ltm")
+fit
+```
+
+## Estimando a nota das provas
+
+```{r}
+sco <- eap(enem.itens,fit,qu=normal.qu())
+head(sco)
+```
+
+```{r}
+hist(sco[,1])
+```
+
+```{r}
+novo.score<-score.transform(sco[,1], mu.new = mean(enem.true_scores), sd.new = sd(enem.true_scores), normalize = FALSE)
+
+
+p1 <- hist(novo.score$new.scores, breaks = 15, main="Histogram of scores", 
+     xlab="Estimated Score")
+p2 <- hist(enem.true_scores, main="Histogram of scores", 
+     xlab="True Score")
+
+plot( p2, col=rgb(1,0,0,1/4), xlim=c(0,1000), main="Histogram of scores", 
+     xlab="Score")
+plot( p1, col=rgb(0,0,1,1/4), xlim=c(0,1000), add=T)
+
+legend("topleft",legend=c("Score real", "Score estimado"), fill = c("red", "blue"), 
+       border = "black")
+```
+```{r}
+sd(enem.true_scores[1:30000])
+```
+
+
+```{r}
+rmse(enem.true_scores, novo.score$new.scores)
+```
+
