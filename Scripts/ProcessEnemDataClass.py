@@ -77,7 +77,7 @@ class ProcessEnemData():
 
             for i in range(45):
                 s = "Questao"+str(i+1)
-                if s in self.questoes_list:
+                if i+1 not in self.questoes_anuladas:
                     enem_df[s] = enem_df['TX_RESPOSTAS_'+self.competencia].str[i]==enem_df['TX_GABARITO_'+self.competencia].str[i]
                     enem_df[s] = enem_df[s].astype(int)
 
@@ -95,8 +95,21 @@ class ProcessEnemData():
 
         return self.df
 
-    def filter_data(self):
-        return
+    def filter_data(self, grupos=None):
+        if grupos is None:
+            grupos = self.df[self.feat_grupo].unique()
+
+        grupo_df = {}
+
+        for grupo in grupos:
+            df_grupo = self.df[self.df[self.feat_grupo]==grupo]
+            df_grupo = df_grupo.drop(self.feat_grupo, axis=1)
+            grupo_df[grupo] = df_grupo
+
+            print(f"[INFO] Grupo {grupo}: {df_grupo.shape[0]} provas")
+            df_grupo.to_csv("../Data/Processed/ENEM_"+str(self.ano)+"_"+self.competencia+"_"+self.caderno+"_"+self.feat_grupo+"_"+str(grupo)+".csv")
+
+        return grupo_df
 
     def bin_data(self, nota_min=300, nota_max=750, step=20):
         bins = np.arange(nota_min,nota_max,step)
