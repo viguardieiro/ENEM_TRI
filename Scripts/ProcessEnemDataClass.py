@@ -85,7 +85,8 @@ class ProcessEnemData():
                         axis=1, inplace=True)
 
             enem_df.to_csv(self.file_path, index = False)
-            enem_df[self.questoes_list].to_csv( "../Data/Processed/ENEM_"+str(self.ano)+"_"+self.competencia+"_"+self.caderno+"_only_questions.csv", index = False)
+            enem_df[self.questoes_list].to_csv( "../Data/Processed/ENEM_"+str(self.ano)+"_"+self.competencia+"_"+self.caderno+"_only_questions.csv",
+                                                index = False)
 
             self.df = enem_df
 
@@ -107,7 +108,8 @@ class ProcessEnemData():
             grupo_df[grupo] = df_grupo
 
             print(f"[INFO] Grupo {grupo}: {df_grupo.shape[0]} provas")
-            df_grupo.to_csv("../Data/Processed/ENEM_"+str(self.ano)+"_"+self.competencia+"_"+self.caderno+"_"+self.feat_grupo+"_"+str(grupo)+".csv")
+            df_grupo.to_csv("../Data/Processed/ENEM_"+str(self.ano)+"_"+self.competencia+"_"+self.caderno+"_"+self.feat_grupo+"_"+str(grupo)+".csv",
+                            index = False)
 
         return grupo_df
 
