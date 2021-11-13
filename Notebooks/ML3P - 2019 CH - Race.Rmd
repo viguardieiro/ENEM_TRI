@@ -1,0 +1,108 @@
+---
+title: "ML3P - 2019 CH - Race"
+author: "Vitoria Guardieiro"
+date: "11/12/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ltm)
+library(CTT)
+library(Metrics)
+require(irtoys)
+```
+
+## Candidatos brancos
+
+### Dados
+
+```{r}
+white <- read.csv(file='../Data/Processed/ENEM_2019_CH_Azul_TP_COR_RACA_1.csv')
+white$itens <- white[,2:45]
+white$true_scores <- white[,1]
+head(white$itens)
+```
+
+### Estimação dos parâmetros
+
+```{r}
+white$fit <- est(white$itens[1:30000,], model = "3PL", engine = "ltm")
+white$fit$est
+```
+
+### Estimação das notas
+
+```{r}
+white$score <- eap(white$itens,white$fit,qu=normal.qu())
+white$score <- score.transform(white$score [,1], mu.new = mean(white$true_scores[1:30000]), sd.new = sd(white$true_scores[1:30000]), normalize = FALSE)$new.scores
+
+p1 <- hist(white$score, breaks = 15, main="Estimated Scores - White", 
+     xlab="Estimated Score")
+p2 <- hist(white$true_scores, main="True Scores - White", 
+     xlab="True Score")
+
+plot( p2, col=rgb(1,0,0,1/4), xlim=c(0,1000), main="True and Estimated Scores - White", 
+     xlab="Score")
+plot( p1, col=rgb(0,0,1,1/4), xlim=c(0,1000), add=T)
+
+legend("topleft",legend=c("True Score", "Estimated Score"), fill = c("red", "blue"), 
+       border = "black")
+```
+
+### Erro de estimação
+
+```{r}
+rmse(white$true_scores, white$score)
+```
+
+```{r}
+white$residuals <- white$true_scores-white$score
+hist(white$residuals)
+```
+
+
+## Candidatos negros
+
+### Dados
+
+```{r}
+black <- read.csv(file='../Data/Processed/ENEM_2019_CH_Azul_TP_COR_RACA_2.csv')
+black$itens <- black[,2:45]
+black$true_scores <- black[,1]
+head(black$itens)
+```
+
+### Estimação dos parâmetros
+
+```{r}
+black$fit2 <- est(black$itens[1:30000,], model = "3PL", engine = "ltm")
+black$fit2$est
+```
+
+### Estimação das notas
+
+```{r}
+black$score <- eap(black$itens,black$fit,qu=normal.qu())
+black$score <- score.transform(black$score [,1], mu.new = mean(black$true_scores[1:30000]), sd.new = sd(black$true_scores[1:30000]), normalize = FALSE)$new.scores
+
+p1 <- hist(black$score, breaks = 15, main="Estimated Scores - White", 
+     xlab="Estimated Score")
+p2 <- hist(black$true_scores, main="True Scores - White", 
+     xlab="True Score")
+
+plot( p2, col=rgb(1,0,0,1/4), xlim=c(0,1000), main="True and Estimated Scores - White", 
+     xlab="Score")
+plot( p1, col=rgb(0,0,1,1/4), xlim=c(0,1000), add=T)
+
+legend("topleft",legend=c("True Score", "Estimated Score"), fill = c("red", "blue"), 
+       border = "black")
+```
+
+### Erro de estimação
+
+```{r}
+rmse(black$true_scores, black$score)
+```
+
