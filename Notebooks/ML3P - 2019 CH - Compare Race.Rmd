@@ -1,0 +1,47 @@
+---
+title: "ML3P - 2019 CH - Compare Race"
+author: "Vitoria Guardieiro"
+date: "11/17/2021"
+output: html_document
+---
+
+```{r}
+library(ltm)
+library(CTT)
+require(irtoys)
+```
+
+
+```{r}
+white_par <- data.matrix(read.csv(file='../Sheets/Parametros_2019_CH_Azul_Brancos.csv', row.names = 1))
+white_irf <- irf(white_par)
+
+black_par <- data.matrix(read.csv(file='../Sheets/Parametros_2019_CH_Azul_Negros.csv', row.names = 1))
+black_irf <- irf(black_par)
+
+pardo_par <- data.matrix(read.csv(file='../Sheets/Parametros_2019_CH_Azul_Pardos.csv', row.names = 1))
+pardo_irf <- irf(pardo_par)
+```
+
+```{r}
+png(file="../Images/CH2019Race-IRF-Q13.png")
+plot(irf(fit$est[13,]), co='black', type="l", lty=2, main="Item response function - Question 13")
+plot(irf(white_par[13,]), co='blue', add=T)
+plot(irf(black_par[13,]), co='green', add=T)
+plot(irf(pardo_par[13,]), co='red', add=T)
+
+legend("topleft", legend=c("Todos", "Branco", "Negro", "Pardo"),
+       col=c("black", "blue", "green", "red"), lty=1)
+```
+
+
+```{r}
+png(file="../Images/CH2019Race-IRF-Q40.png")
+plot(irf(fit$est[40,], x=seq(from = -1, to = 4, by = 0.05)), co='black', main="Item response function - Question 40")
+plot(irf(white_par[40,]), co='blue', add=T)
+plot(irf(black_par[40,]), co='green', add=T)
+plot(irf(pardo_par[40,]), co='red', add=T)
+
+legend("topleft", legend=c("Todos", "Branco", "Negro", "Pardo"),
+       col=c("black", "blue", "green", "red"), lty=1)
+```
