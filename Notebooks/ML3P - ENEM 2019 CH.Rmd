@@ -18,7 +18,7 @@ require(irtoys)
 
 ```{r}
 enem <- read.csv(file='../Data/Processed/ENEM_2019_CH_Azul.csv')
-enem.itens <- enem[,2:45]
+enem.itens <- enem[,3:46]
 enem.true_scores <- enem[,1]
 head(enem.itens)
 ```
@@ -43,8 +43,9 @@ dsc
 Por limitações técnicas, estimo com apenas $30.000$ provas.
 
 ```{r}
-fit <- est(enem.itens[1:30000,], model = "3PL", engine = "ltm")
-fit
+fit <- est(enem.itens[100000:130000,], model = "3PL", engine = "ltm")
+write.csv(fit$est, '../Data/Processed/Parametros_2019_CH_Azul_All.csv')
+fit$est
 ```
 
 ## Estimando a nota das provas
