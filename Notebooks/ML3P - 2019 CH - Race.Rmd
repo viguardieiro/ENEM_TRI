@@ -29,6 +29,7 @@ head(white$itens)
 
 ```{r}
 white$fit <- est(white$itens[1:30000,], model = "3PL", engine = "ltm")
+write.csv(white$fit$est, '../Data/Processed/Parametros_2019_CH_Azul_Brancos.csv')
 white$fit$est
 ```
 
@@ -77,8 +78,9 @@ head(black$itens)
 ### Estimação dos parâmetros
 
 ```{r}
-black$fit2 <- est(black$itens[1:30000,], model = "3PL", engine = "ltm")
-black$fit2$est
+black_fit <- est(black$itens[1:30000,], model = "3PL", engine = "ltm")
+write.csv(black_fit$est, '../Data/Processed/Parametros_2019_CH_Azul_Negros.csv')
+black_fit$est
 ```
 
 ### Estimação das notas
@@ -100,9 +102,49 @@ legend("topleft",legend=c("True Score", "Estimated Score"), fill = c("red", "blu
        border = "black")
 ```
 
+
+
+## Candidatos pardos
+
+### Dados
+
+```{r}
+pardo <- read.csv(file='../Data/Processed/ENEM_2019_CH_Azul_TP_COR_RACA_3.csv')
+pardo$itens <- pardo[,2:45]
+pardo$true_scores <- pardo[,1]
+head(pardo$itens)
+```
+
+### Estimação dos parâmetros
+
+```{r}
+pardo_fit <- est(pardo$itens[1:30000,], model = "3PL", engine = "ltm")
+write.csv(pardo_fit$est, '../Data/Processed/Parametros_2019_CH_Azul_Pardos.csv')
+pardo_fit$est
+```
+
+### Estimação das notas
+
+```{r}
+pardo_score <- eap(pardo$itens[1:1000,],pardo_fit,qu=normal.qu())
+pardo_score <- score.transform(pardo$score[,1], mu.new = 500, sd.new = 100, normalize = FALSE)$new.scores
+
+p1 <- hist(pardo_score, breaks = 15, main="Estimated Scores - Pardo", 
+     xlab="Estimated Score")
+p2 <- hist(pardo$true_scores, main="True Scores - White", 
+     xlab="True Score")
+
+plot( p2, col=rgb(1,0,0,1/4), xlim=c(0,1000), main="True and Estimated Scores - Pardo", 
+     xlab="Score")
+plot( p1, col=rgb(0,0,1,1/4), xlim=c(0,1000), add=T)
+
+legend("topleft",legend=c("True Score", "Estimated Score"), fill = c("red", "blue"), 
+       border = "black")
+```
+
 ### Erro de estimação
 
 ```{r}
-rmse(black$true_scores, black$score)
+rmse(pardo$true_scores, pardo_score)
 ```
 
