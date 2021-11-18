@@ -40,7 +40,11 @@ class ProcessEnemData():
 
         self.feat_grupo = feat_grupo
 
-        self.file_path = "../Data/Processed/ENEM_"+str(self.ano)+"_"+self.competencia+"_"+self.caderno+".csv"
+        self.file_path = "../Data/Processed/ENEM_"+str(self.ano)+"_"+self.competencia+"_"+self.caderno
+        if feat_grupo is not None:
+            self.file_path = self.file_path+"_"+feat_grupo
+
+        self.file_path = self.file_path+".csv"
 
         self.df = None
 
