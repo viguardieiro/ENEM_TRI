@@ -6,7 +6,7 @@ from pathlib import Path
 
 class ProcessEnemData():
     def __init__(self, ano=2019, competencia='CH', questoes_anuladas=[], 
-                filt_caderno=True, caderno='Azul',
+                filt_caderno=True, caderno='Azul', tipo_prova=507,
                 filt_conclusao=True, tipo_conclusao_em=2, # "Estou cursando e concluirei o Ensino Médio em 2019"
                 filt_ensino=True, tipo_ensino=1, # Ensino Regular
                 feat_grupo = None
@@ -17,7 +17,7 @@ class ProcessEnemData():
         self.caderno = caderno
 
         self.filt_caderno = filt_caderno
-        self.tipo_prova = 507 # Prova Azul
+        self.tipo_prova = tipo_prova # Prova Azul
         self.filt_conclusao = filt_conclusao
         self.tipo_conclusao_em = tipo_conclusao_em
         self.filt_ensino  =filt_ensino
