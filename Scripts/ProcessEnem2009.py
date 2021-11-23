@@ -31,7 +31,9 @@ else:
             else:
                 enem_df = enem_df.append(df)
 
-    enem_df.to_csv("../Data/Processed/ENEM_2009_All.csv")
+    enem_df.to_csv("../Data/Processed/ENEM_2009_All.csv", index = False)
+    print(f"[INFO] {enem_df.shape[0]} participantes no total.")
+    print('---------------------------')
 
 
 # Para cada competência
@@ -57,7 +59,7 @@ for comp in competencias:
         df_comp[s] = df_comp[s].astype(int)
     df_comp.drop(['TX_RESPOSTAS_'+comp, 'TX_GABARITO_'+comp], axis=1, inplace=True)
 
-    df_comp.to_csv("../Data/Processed/ENEM_2009_"+comp+"_caderno_"+cod_comp[comp]+".csv")
+    df_comp.to_csv("../Data/Processed/ENEM_2009_"+comp+"_caderno_"+cod_comp[comp]+".csv", index = False)
 
     print(f"[INFO] {df_comp.shape[0]} provas de {comp}.")
     print('[INFO] Nota mínima: ', df_comp['NU_NOTA_'+comp].min())
