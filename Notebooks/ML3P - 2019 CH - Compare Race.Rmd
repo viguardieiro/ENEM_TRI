@@ -13,6 +13,9 @@ require(irtoys)
 
 
 ```{r}
+all_par <- data.matrix(read.csv(file='../Sheets/Parametros_2019_CH_Azul_All.csv', row.names = 1))
+all_irf <- irf(all_par)
+
 white_par <- data.matrix(read.csv(file='../Sheets/Parametros_2019_CH_Azul_Brancos.csv', row.names = 1))
 white_irf <- irf(white_par)
 
