@@ -1,5 +1,7 @@
-# Data folder
+# Folders
 Data/
+Images/
+Sheets/
 
 # Python files
 __pycache__/
