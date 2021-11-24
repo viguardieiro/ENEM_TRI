@@ -1,0 +1,87 @@
+---
+title: "ML3P"
+output: html_notebook
+---
+
+```{r}
+library(ltm)
+library(CTT)
+library(Metrics)
+require(irtoys)
+```
+
+# Ciências Humanas
+
+## Dados já limpos
+
+```{r}
+ch <- read.csv(file='../Data/Processed/ENEM_2009_CH_caderno_53.csv')
+ch.itens <- ch[,3:47]
+ch.true_scores <- ch[,2]
+head(ch.itens)
+```
+
+## Descript 
+
+```{r}
+dsc <- descript(ch.itens)
+dsc
+```
+
+## Estimar parâmetros ML3P
+
+Por limitações técnicas, estimo com apenas $30.000$ provas.
+
+
+```{r}
+ch.fit <- est(ch.itens, model = "3PL", engine = "ltm")
+write.csv(ch.fit$est, '../Data/Processed/Parametros_2009_CH_Azul_All.csv')
+ch.fit$est
+```
+
+##  Estimando a nota das provas
+
+```{r}
+ch.score <- eap(ch.itens, ch.fit, qu=normal.qu())
+hist(ch.score[,1])
+```
+## Média CH
+
+```{r}
+mean.all <- mean(ch.score[,1])
+mean.all
+```
+
+```{r}
+sd.all <- sd(ch.score[,1])
+sd.all
+```
+
+
+```{r}
+mean.pub <- mean(ch.score[ch[,1]!=4,1], na.rm=TRUE)
+mean.pub
+```
+## Sd CH
+```{r}
+sd.pub <- sd(ch.score[ch[,1]!=4, 1], na.rm=TRUE)
+sd.pub
+```
+
+
+```{r}
+#ch.scoret <- score.transform(ch.score[,1], mu.new=500, sd.new=100, normalize = FALSE)$new.scores
+ch.scoret <- ch.score[,1]*(100/sd(ch.score[,1])) + 500 - 100*mean(ch.score[,1])/sd(ch.score[,1])
+
+hist(ch.scoret, main="True and Estimated Scores", col=rgb(1,0,0,1/4), xlab="Score")
+hist(ch.true_scores, xlab="True Score", col=rgb(0,0,1,1/4), add=T)
+
+legend("topleft",legend=c("True Score", "Estimated Score"), fill = c(rgb(1,0,0,1/4), rgb(0,0,1,1/4)), 
+       border = "black")
+```
+
+
+```{r}
+rmse(ch.true_scores, ch.scoret)
+```
+
