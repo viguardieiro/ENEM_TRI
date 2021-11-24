@@ -23,8 +23,9 @@ else:
             df = chunk[features]
 
             df = df[df['TP_ST_CONCLUSAO']=='2'] # Concluientes em 2009
-            df = df[df['TP_DEPENDENCIA_ADM_ESC']!='4'] # Escolas públicas
-            df.drop(['TP_ST_CONCLUSAO', 'TP_DEPENDENCIA_ADM_ESC'], axis=1, inplace=True)
+            #df = df[df['TP_DEPENDENCIA_ADM_ESC']!='4'] # Escolas públicas
+            #df.drop(['TP_ST_CONCLUSAO', 'TP_DEPENDENCIA_ADM_ESC'], axis=1, inplace=True)
+            df.drop(['TP_ST_CONCLUSAO'], axis=1, inplace=True)
 
             if enem_df is None:
                 enem_df = df
@@ -46,7 +47,7 @@ for comp in competencias:
     # Filtra os alunos que fizeram o mesmo caderno de prova
     df_comp = df_comp[df_comp['CO_PROVA_'+comp]==cod_comp[comp]]
 
-    feat_comp = ['NU_NOTA_'+comp, 'TX_RESPOSTAS_'+comp, 'TX_GABARITO_'+comp]
+    feat_comp = ['TP_DEPENDENCIA_ADM_ESC', 'NU_NOTA_'+comp, 'TX_RESPOSTAS_'+comp, 'TX_GABARITO_'+comp]
     df_comp = df_comp[feat_comp]
     
     # Transforma a coluna de notas em númerico
