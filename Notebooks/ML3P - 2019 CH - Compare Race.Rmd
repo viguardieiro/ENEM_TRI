@@ -11,6 +11,7 @@ library(CTT)
 require(irtoys)
 ```
 
+# Compare Item Curves
 
 ```{r}
 all_par <- data.matrix(read.csv(file='../Sheets/Parametros_2019_CH_Azul_All.csv', row.names = 1))
@@ -27,11 +28,11 @@ pardo_irf <- irf(pardo_par)
 ```
 
 ```{r}
-png(file="../Images/CH2019Race-IRF-Q13.png")
-plot(irf(fit$est[13,]), co='black', type="l", lty=2, main="Item response function - Question 13")
-plot(irf(white_par[13,]), co='blue', add=T)
-plot(irf(black_par[13,]), co='green', add=T)
-plot(irf(pardo_par[13,]), co='red', add=T)
+#png(file="../Images/CH2019Race-IRF-Q9.png")
+plot(irf(all_par[9,]), co='black', type="l", lty=2, main="Item response function - Question 9")
+plot(irf(white_par[9,]), co='blue', add=T)
+plot(irf(black_par[9,]), co='green', add=T)
+plot(irf(pardo_par[9,]), co='red', add=T)
 
 legend("topleft", legend=c("Todos", "Branco", "Negro", "Pardo"),
        col=c("black", "blue", "green", "red"), lty=1)
@@ -39,12 +40,80 @@ legend("topleft", legend=c("Todos", "Branco", "Negro", "Pardo"),
 
 
 ```{r}
-png(file="../Images/CH2019Race-IRF-Q40.png")
-plot(irf(fit$est[40,], x=seq(from = -1, to = 4, by = 0.05)), co='black', main="Item response function - Question 40")
+#png(file="../Images/CH2019Race-IRF-Q40.png")
+plot(irf(all_par[40,], x=seq(from = -1, to = 4, by = 0.05)), co='black', main="Item response function - Question 40")
 plot(irf(white_par[40,]), co='blue', add=T)
 plot(irf(black_par[40,]), co='green', add=T)
 plot(irf(pardo_par[40,]), co='red', add=T)
 
 legend("topleft", legend=c("Todos", "Branco", "Negro", "Pardo"),
        col=c("black", "blue", "green", "red"), lty=1)
+```
+
+# Compare Scores
+
+## True Scores
+
+```{r}
+white <- read.csv(file='../Data/Processed/ENEM_2019_CH_Azul_TP_COR_RACA_1.csv')
+white$true_scores <- white[,1]
+
+black <- read.csv(file='../Data/Processed/ENEM_2019_CH_Azul_TP_COR_RACA_2.csv')
+black$true_scores <- black[,1]
+
+pardo <- read.csv(file='../Data/Processed/ENEM_2019_CH_Azul_TP_COR_RACA_3.csv')
+pardo$true_scores <- pardo[,1]
+```
+
+
+```{r}
+hist(white$true_scores, main="Scores by race", col=rgb(1,0,0,1/4), xlab="Score", ylim=c(0,30000))
+hist(black$true_scores, col=rgb(0,1,0,1/4), add=T)
+hist(pardo$true_scores, col=rgb(0,0,1,1/4), add=T)
+
+legend("topleft",legend=c("White", "Black", "Pardo"), fill = c(rgb(1,0,0,1/4), rgb(0,1,0,1/4), rgb(0,0,1,1/4)), 
+       border = "black")
+```
+
+## Estimated Score
+
+```{r}
+mean2009 <- -0.0003363655
+sd2009 <- 0.8977797
+```
+
+
+```{r}
+white$est_scores <- eap(white[,2:45], white_par, qu=normal.qu())[,1]
+white$est_scores <- white$est_scores*(100/sd2009) + 500 - 100*mean2009/sd2009
+
+hist(white$est_scores, main="True and Estimated Scores - White", col=rgb(1,0,0,1/4), xlab="Score")
+hist(white$true_scores, xlab="True Score", col=rgb(0,0,1,1/4), add=T)
+
+legend("topleft",legend=c("True Score", "Estimated Score"), fill = c(rgb(1,0,0,1/4), rgb(0,0,1,1/4)), 
+       border = "black")
+```
+
+
+```{r}
+black$est_scores <- eap(black[,2:45], white_par, qu=normal.qu())[,1]
+black$est_scores <- black$est_scores*(100/sd2009) + 500 - 100*mean2009/sd2009
+
+hist(black$est_scores, main="True and Estimated Scores - Black", col=rgb(1,0,0,1/4), xlab="Score")
+hist(black$true_scores, xlab="True Score", col=rgb(0,0,1,1/4), add=T)
+
+legend("topleft",legend=c("True Score", "Estimated Score"), fill = c(rgb(1,0,0,1/4), rgb(0,0,1,1/4)), 
+       border = "black")
+```
+
+
+```{r}
+pardo$est_scores <- eap(pardo[,2:45], white_par, qu=normal.qu())[,1]
+pardo$est_scores <- pardo$est_scores*(100/sd2009) + 500 - 100*mean2009/sd2009
+
+hist(pardo$est_scores, main="True and Estimated Scores - Pardo", col=rgb(1,0,0,1/4), xlab="Score")
+hist(pardo$true_scores, xlab="True Score", col=rgb(0,0,1,1/4), add=T)
+
+legend("topleft",legend=c("True Score", "Estimated Score"), fill = c(rgb(1,0,0,1/4), rgb(0,0,1,1/4)), 
+       border = "black")
 ```
