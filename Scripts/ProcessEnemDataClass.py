@@ -6,7 +6,6 @@ from pathlib import Path
 
 class ProcessEnemData():
     def __init__(self, ano=2019, competencia='CH', questoes_anuladas=[], 
-                filt_caderno=True, caderno='Azul', tipo_prova=507,
                 filt_conclusao=True, tipo_conclusao_em=2, # "Estou cursando e concluirei o Ensino Médio em 2019"
                 filt_ensino=True, tipo_ensino=1, # Ensino Regular
                 feat_grupo = None
@@ -14,10 +13,7 @@ class ProcessEnemData():
 
         self.ano = ano
         self.competencia = competencia
-        self.caderno = caderno
 
-        self.filt_caderno = filt_caderno
-        self.tipo_prova = tipo_prova # Prova Azul
         self.filt_conclusao = filt_conclusao
         self.tipo_conclusao_em = tipo_conclusao_em
         self.filt_ensino  =filt_ensino
@@ -27,10 +23,8 @@ class ProcessEnemData():
         self.questoes_list = ['Questao'+str(i) for i in range(1,46) if i not in self.questoes_anuladas]
 
         self.features = ['TP_PRESENCA_'+competencia, 'NU_NOTA_'+competencia, 'TX_RESPOSTAS_'+competencia, 
-                        'TX_GABARITO_'+competencia]
+                        'TX_GABARITO_'+competencia, 'CO_PROVA_'+competencia]
 
-        if self.filt_caderno:
-            self.features.append('CO_PROVA_'+competencia)
         if self.filt_conclusao:
             self.features.append('TP_ST_CONCLUSAO')
         if self.filt_ensino:
@@ -40,7 +34,7 @@ class ProcessEnemData():
 
         self.feat_grupo = feat_grupo
 
-        self.file_path = "../Data/Processed/ENEM_"+str(self.ano)+"_"+self.competencia+"_"+self.caderno
+        self.file_path = "../Data/Processed/ENEM_"+str(self.ano)+"_"+self.competencia
         if feat_grupo is not None:
             self.file_path = self.file_path+"_"+feat_grupo
 
@@ -62,9 +56,6 @@ class ProcessEnemData():
                     df = df[df['TP_PRESENCA_'+self.competencia]==1]
                     df.drop(['TP_PRESENCA_'+self.competencia], axis=1, inplace=True)
 
-                    if self.filt_caderno:
-                        df = df[df['CO_PROVA_'+self.competencia]==self.tipo_prova]
-                        df.drop(['CO_PROVA_'+self.competencia], axis=1, inplace=True)
                     if self.filt_conclusao:
                         df = df[df['TP_ST_CONCLUSAO']==self.tipo_conclusao_em]
                         df.drop(['TP_ST_CONCLUSAO'], axis=1, inplace=True)
@@ -79,20 +70,60 @@ class ProcessEnemData():
                     else:
                         enem_df = enem_df.append(df)
 
-            for i in range(45):
-                s = "Questao"+str(i+1)
-                if i+1 not in self.questoes_anuladas:
-                    enem_df[s] = enem_df['TX_RESPOSTAS_'+self.competencia].str[i]==enem_df['TX_GABARITO_'+self.competencia].str[i]
-                    enem_df[s] = enem_df[s].astype(int)
 
-            enem_df.drop(['TX_RESPOSTAS_'+self.competencia, 'TX_GABARITO_'+self.competencia],
-                        axis=1, inplace=True)
+            questoes_pd = pd.read_csv("../Data/Original/microdados_enem"+str(self.ano)+"/Dados/ITENS_PROVA_"+str(self.ano)+".csv",
+                    sep=';')
 
-            enem_df.to_csv(self.file_path, index = False)
-            enem_df[self.questoes_list].to_csv( "../Data/Processed/ENEM_"+str(self.ano)+"_"+self.competencia+"_"+self.caderno+"_only_questions.csv",
-                                                index = False)
+            print("[INFO] Gerando tabela de acerto por competência...")
+            print(f"[INFO] Processando cadernos de prova...")
+            df_comp = enem_df[['CO_PROVA_'+self.competencia, 
+                            'TX_RESPOSTAS_'+self.competencia, 
+                            'TX_GABARITO_'+self.competencia, 
+                            'NU_NOTA_'+self.competencia]]
 
-            self.df = enem_df
+            cadernos_comp = questoes_pd[questoes_pd['SG_AREA']==self.competencia]['CO_PROVA'].unique()
+            # Gera colunas indicando se o candidato acertou ou não a questão
+            for i_cad in range(len(cadernos_comp)):
+                caderno = int(cadernos_comp[i_cad])
+                print(f"[INFO]    Processando caderno {caderno} ({i_cad+1}/{len(cadernos_comp)})...")
+                itens_list = questoes_pd[questoes_pd['CO_PROVA']==caderno]['CO_ITEM'].copy().reset_index(drop=True).sort_values()
+                for i in range(45):
+                    item_id = str(itens_list.iloc[i])
+                    s = "Item "+item_id
+                    if s not in df_comp.columns:
+                        df_comp.loc[:,s] = 0
+
+                    df_comp.loc[df_comp['CO_PROVA_'+self.competencia]==caderno,s] = df_comp[df_comp['CO_PROVA_'+self.competencia]==caderno]['TX_RESPOSTAS_'+self.competencia].str[i]==df_comp[df_comp['CO_PROVA_'+self.competencia]==caderno]['TX_GABARITO_'+self.competencia].str[i]
+                    df_comp.loc[df_comp['CO_PROVA_'+self.competencia]==caderno,s] = df_comp[df_comp['CO_PROVA_'+self.competencia]==caderno][s].astype(int)
+
+                print(f"[INFO]    Processamento do caderno {caderno} concluído.")
+            
+            # Transforma a coluna de notas em númerico
+            df_comp['NU_NOTA_'+self.competencia] = pd.to_numeric(df_comp['NU_NOTA_'+self.competencia])
+            df_comp.drop(['CO_PROVA_'+self.competencia,'TX_RESPOSTAS_'+self.competencia, 'TX_GABARITO_'+self.competencia],
+                            axis=1, inplace=True)
+
+            df_comp.to_csv("../Data/Processed/ENEM_2009_Concluintes_"+self.competencia+".csv", index = False)
+
+            print(f"[INFO] Processamento da competência {self.competencia} concluído.")
+
+            print(f"[INFO] {df_comp.shape[0]} provas de {self.competencia}.")
+            self.df = df_comp
+
+            # for i in range(45):
+            #     s = "Questao"+str(i+1)
+            #     if i+1 not in self.questoes_anuladas:
+            #         enem_df[s] = enem_df['TX_RESPOSTAS_'+self.competencia].str[i]==enem_df['TX_GABARITO_'+self.competencia].str[i]
+            #         enem_df[s] = enem_df[s].astype(int)
+
+            # enem_df.drop(['TX_RESPOSTAS_'+self.competencia, 'TX_GABARITO_'+self.competencia],
+            #             axis=1, inplace=True)
+
+            # enem_df.to_csv(self.file_path, index = False)
+            # enem_df[self.questoes_list].to_csv( "../Data/Processed/ENEM_"+str(self.ano)+"_"+self.competencia+"_only_questions.csv",
+            #                                     index = False)
+
+            # self.df = enem_df
 
         print('[INFO] Nota mínima: ', self.df['NU_NOTA_'+self.competencia].min())
         print('[INFO] Nota mínima (diferente de zero): ', self.df[self.df['NU_NOTA_'+self.competencia]!=0]['NU_NOTA_'+self.competencia].min())
@@ -112,7 +143,7 @@ class ProcessEnemData():
             grupo_df[grupo] = df_grupo
 
             print(f"[INFO] Grupo {grupo}: {df_grupo.shape[0]} provas")
-            df_grupo.to_csv("../Data/Processed/ENEM_"+str(self.ano)+"_"+self.competencia+"_"+self.caderno+"_"+self.feat_grupo+"_"+str(grupo)+".csv",
+            df_grupo.to_csv("../Data/Processed/ENEM_"+str(self.ano)+"_"+self.competencia+"_"+self.feat_grupo+"_"+str(grupo)+".csv",
                             index = False)
 
         return grupo_df
