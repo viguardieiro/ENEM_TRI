@@ -9,7 +9,7 @@ print("")
 print("[INFO] Começando análise das questões de Ciências Humanas (CH)...")
 print("[INFO] Lendo gabaritos dos alunos concluintes do ensino regular...")
 
-ch <- read.csv(file='../Data/Processed/ENEM_2009_Concluintes_CH.csv')
+ch <- read.csv(file='../Data/Processed/ENEM2009/Concluintes_CH.csv')
 ch.itens <- ch[,2:46]
 ch.true_scores <- ch[,1]
 
@@ -17,7 +17,7 @@ print("[INFO] Gabaritos lidos.")
 print(paste0("[INFO] Total de participantes: ", nrow(ch)))
 
 print("[INFO] Checando se os parâmetros já foram calculados...")
-file_name = "../Data/Processed/ENEM 2009/Parameters/Parametros_CH_Concluintes.csv"
+file_name = "../Data/Processed/ENEM2009/Parameters/Parametros_CH_Concluintes.csv"
 if(file.exists(file_name)){
   print("[INFO] Arquivo de parâmetros encontrado.")
   ch.fit <- data.matrix(read.csv(file_name, row.names = 1))
@@ -36,11 +36,11 @@ print(ch.fit)
 print("")
 
 print("[INFO] Checando se as notas dos concluintes já foram estimadas...")
-file_name = "../Data/Processed/ENEM 2009/Estimated Scores/Concluintes_CH.csv"
+file_name = "../Data/Processed/ENEM2009/Estimated Scores/Concluintes_CH.csv"
 if(file.exists(file_name)){
   print("[INFO] Arquivo de notas dos concluintes encontrado.")
   ch.score <- data.matrix(read.csv(file_name, row.names = 1))
-  ch.scoret <- ch.score <- data.matrix(read.csv("../Data/Processed/ENEM 2009/Estimated Scores/Concluintes_CH_0_1000.csv", row.names = 1))
+  ch.scoret <- ch.score <- data.matrix(read.csv("../Data/Processed/ENEM2009/Estimated Scores/Concluintes_CH_0_1000.csv", row.names = 1))
 } else{
   print("[INFO] Arquivo de notas dos concluintes não encontrado.")
   print("[INFO] Calculando notas dos concluintes...")
@@ -50,7 +50,7 @@ if(file.exists(file_name)){
   print("[INFO] Notas dos concluintes estimadas.")
   print("[INFO] Salvando notas dos concluintes...")
   write.csv(ch.score, file_name)
-  write.csv(ch.scoret, "../Data/Processed/ENEM 2009/Estimated Scores/Concluintes_CH_0_1000.csv")
+  write.csv(ch.scoret, "../Data/Processed/ENEM2009/Estimated Scores/Concluintes_CH_0_1000.csv")
   print("[INFO] Notas dos concluintes salvas.")
 }
 
