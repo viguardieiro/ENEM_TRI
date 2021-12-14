@@ -54,13 +54,18 @@ class ProcessEnemData():
             print("Concluído.")
             
             print(f"[INFO] {enem_df.shape[0]} participantes no total.")
-
-            df = enem_df[(enem_df['TP_ST_CONCLUSAO']=='2') & (enem_df['TP_ENSINO']=='1')] # Concluientes no ano
+            
+            df = enem_df[enem_df['TP_ST_CONCLUSAO']=='2'] # Concluintes no ano
+            df.drop(['TP_ST_CONCLUSAO'], axis=1, inplace=True)
+            df.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/Concluintes.csv", index = False)
+            print(f"[INFO] {df.shape[0]} participantes concluintes no total.")
+            
+            df = enem_df[(enem_df['TP_ST_CONCLUSAO']=='2') & (enem_df['TP_ENSINO']=='1')] # Concluintes regulares no ano
             df.drop(['TP_ST_CONCLUSAO'], axis=1, inplace=True)
             df.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/Concluintes_regular.csv", index = False)
-            print(f"[INFO] {df.shape[0]} participantes concluintes no total.")
+            print(f"[INFO] {df.shape[0]} participantes concluintes regulares.")
 
-            df = enem_df[(enem_df['TP_ST_CONCLUSAO']!='2') | (enem_df['TP_ENSINO']!='1')] # Não concluientes no ano
+            df = enem_df[(enem_df['TP_ST_CONCLUSAO']!='2') | (enem_df['TP_ENSINO']!='1')] # Não concluintes no ano
             df.drop(['TP_ST_CONCLUSAO'], axis=1, inplace=True)
             df.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/NaoConcluintes.csv", index = False)
             print(f"[INFO] {df.shape[0]} participantes não concluintes no total.")
@@ -70,7 +75,7 @@ class ProcessEnemData():
            
         return self.df
     
-    def process_competence(self, comp, itens_anulados, enem_df=None):
+    def process_competence(self, comp, itens_anulados, enem_df=None, file_name="Concluintes"):
         if enem_df is None:
             enem_df = self.df
        
@@ -105,7 +110,7 @@ class ProcessEnemData():
         df_comp['NU_NOTA_'+comp] = pd.to_numeric(df_comp['NU_NOTA_'+comp])
         df_comp.drop(['CO_PROVA_'+comp,'TX_RESPOSTAS_'+comp, 'TX_GABARITO_'+comp], axis=1, inplace=True)
 
-        df_comp.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/Concluintes_"+comp+".csv", index = False)
+        df_comp.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/"+file_name+"_"+comp+".csv", index = False)
 
         print(f"[INFO] Processamento da competência {comp} concluído.")
 
