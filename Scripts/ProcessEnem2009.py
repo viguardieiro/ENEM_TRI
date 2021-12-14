@@ -29,13 +29,18 @@ else:
 
     enem_df.to_csv("../Data/Processed/ENEM2009/All.csv", index = False)
     print(f"[INFO] {enem_df.shape[0]} participantes no total.")
-
-    df = enem_df[(enem_df['TP_ST_CONCLUSAO']=='2') & (enem_df['TP_ENSINO']=='1')] # Concluientes em 2009
+    
+     df = enem_df[enem_df['TP_ST_CONCLUSAO']=='2'] # Concluintes em 2009
     df.drop(['TP_ST_CONCLUSAO'], axis=1, inplace=True)
     df.to_csv("../Data/Processed/ENEM2009/Concluintes.csv", index = False)
     print(f"[INFO] {df.shape[0]} participantes concluintes no total.")
 
-    df = enem_df[(enem_df['TP_ST_CONCLUSAO']!='2') | (enem_df['TP_ENSINO']!='1')] # Não concluientes em 2009
+    df = enem_df[(enem_df['TP_ST_CONCLUSAO']=='2') & (enem_df['TP_ENSINO']=='1')] # Concluintes regulares em 2009
+    df.drop(['TP_ST_CONCLUSAO'], axis=1, inplace=True)
+    df.to_csv("../Data/Processed/ENEM2009/Concluintes_regulares.csv", index = False)
+    print(f"[INFO] {df.shape[0]} participantes concluintes regulares.")
+
+    df = enem_df[(enem_df['TP_ST_CONCLUSAO']!='2') | (enem_df['TP_ENSINO']!='1')] # Não concluintes em 2009
     df.drop(['TP_ST_CONCLUSAO'], axis=1, inplace=True)
     df.to_csv("../Data/Processed/ENEM2009/NaoConcluintes.csv", index = False)
     print(f"[INFO] {df.shape[0]} participantes não concluintes no total.")
