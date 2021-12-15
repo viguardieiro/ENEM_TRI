@@ -1,0 +1,76 @@
+library(ltm)
+library(CTT)
+library(Metrics)
+require(irtoys)
+
+print("[INFO] Processando dados do ENEM 2019...")
+
+mean_ch2009 <- -0.1972368
+sd_ch2009 <- 0.7810876
+
+competencias <- c("CN", "CH", "LC", "MT")
+
+for (comp in competencias) {
+
+    print(paste0("[INFO] Começando análise das questões de ", comp))
+    print("[INFO] Lendo gabaritos dos alunos concluintes...")
+
+    ch <- read.csv(file=sprintf('../Data/Processed/ENEM2019/Concluintes_%s_clean.csv',comp))
+    ch.itens <- ch[,2:46]
+    ch.true_scores <- ch[,1]
+
+    print("[INFO] Gabaritos lidos.")
+    print(paste0("[INFO] Total de participantes: ", nrow(ch)))
+
+    print("[INFO] Checando se os parâmetros já foram calculados...")
+    file_name = sprintf("../Data/Processed/ENEM2019/Parameters/Parametros_%s_Concluintes.csv", comp)
+    if(file.exists(file_name)){
+      print("[INFO] Arquivo de parâmetros encontrado.")
+      ch.fit <- data.matrix(read.csv(file_name, row.names = 1))
+    } else{
+      print("[INFO] Arquivo de parâmetros não encontrado.")
+      print("[INFO] Calculando parâmetros...")
+      ch.fit <- est(ch.itens, model = "3PL", engine = "ltm")$est
+      print("[INFO] Parâmetros calculados.")
+      print("[INFO] Salvando parâmetros...")
+      write.csv(ch.fit, file_name)
+      print("[INFO] Parâmetros salvos.")
+    }
+
+    print("[INFO] Parâmetros encontrados:")
+    print(ch.fit)
+    print("")
+
+    print("[INFO] Checando se as notas dos concluintes já foram estimadas...")
+    file_name = sprintf("../Data/Processed/ENEM2019/Estimated Scores/Concluintes_%s.csv", comp)
+    if(file.exists(file_name)){
+      print("[INFO] Arquivo de notas dos concluintes encontrado.")
+      ch.score <- data.matrix(read.csv(file_name, row.names = 1))
+      ch.scoret <- data.matrix(read.csv(sprintf("../Data/Processed/ENEM2019/Estimated Scores/Concluintes_%s_0_1000.csv", comp), row.names = 1))
+    } else{
+      print("[INFO] Arquivo de notas dos concluintes não encontrado.")
+      print("[INFO] Calculando notas dos concluintes...")
+      ch.score <- eap(ch.itens,ch.fit, qu=normal.qu())
+      ch.scoret <- ch.score[,1]*(100/sd_ch2009) + 500 - 100*mean_ch2009/sd_ch2009
+
+      print("[INFO] Notas dos concluintes estimadas.")
+      print("[INFO] Salvando notas dos concluintes...")
+      write.csv(ch.score, file_name)
+      write.csv(ch.scoret, sprintf("../Data/Processed/ENEM2019/Estimated Scores/Concluintes_%s_0_1000.csv", comp))
+      print("[INFO] Notas dos concluintes salvas.")
+    }
+
+    print(paste0("[INFO] Nota média: ", mean(ch.score[,1])))
+    print(paste0("[INFO] Desvio padrão: ", sd(ch.score[,1])))
+
+    png(file=sprintf("../Images/%s2019-Concluintes.png",comp))
+    hist(ch.scoret, main=sprintf("Estimated Scores - %s", comp), col=rgb(1,0,0,1/4), xlab="Score", breaks=15,
+         ylim=c(0,300000), xlim=c(200,1000))
+    hist(ch.true_scores, xlab="True Score",  breaks=15, col=rgb(0,0,1,1/4), add=T)
+
+    legend("topright",legend=c("True Score", "Estimated Score"), fill = c(rgb(0,0,1,1/4), rgb(1,0,0,1/4)), 
+           border = "black")
+
+    print(paste0("[INFO] Erro de estimação (RMSE): ", rmse(ch.true_scores, ch.scoret)))
+    print("-----------------------------------------")
+}
