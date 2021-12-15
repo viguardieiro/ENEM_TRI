@@ -6,4 +6,12 @@ Sheets/
 # Python files
 __pycache__/
 Scripts/__pycache__/
+
+# R files
 Scripts/.Rhistory
+.Rhistory
+.RData
+
+# log files
+*.log
+
