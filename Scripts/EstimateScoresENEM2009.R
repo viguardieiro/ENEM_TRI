@@ -42,7 +42,7 @@ for (comp in competencias) {
     if(file.exists(file_name)){
       print("[INFO] Arquivo de notas dos concluintes encontrado.")
       ch.score <- data.matrix(read.csv(file_name, row.names = 1))
-      ch.scoret <- ch.score <- data.matrix(read.csv(sprintf("../Data/Processed/ENEM2009/Estimated Scores/Concluintes_%s_0_1000.csv", comp), row.names = 1))
+      ch.scoret <- data.matrix(read.csv(sprintf("../Data/Processed/ENEM2009/Estimated Scores/Concluintes_%s_0_1000.csv", comp), row.names = 1))
     } else{
       print("[INFO] Arquivo de notas dos concluintes não encontrado.")
       print("[INFO] Calculando notas dos concluintes...")
