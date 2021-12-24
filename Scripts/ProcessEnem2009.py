@@ -9,8 +9,8 @@ features = ['TP_DEPENDENCIA_ADM_ESC', 'TP_ST_CONCLUSAO', 'TP_ENSINO',
             'TX_GABARITO_CN',  'TX_GABARITO_CH',  'TX_GABARITO_LC',  'TX_GABARITO_MT']
 
 
-if Path("../Data/Processed/ENEM2009/Concluintes.csv").exists():
-    enem_df = pd.read_csv("../Data/Processed/ENEM2009/Concluintes.csv")
+if Path("../Data/Processed/ENEM2009/Concluintes_regulares.csv").exists():
+    enem_df = pd.read_csv("../Data/Processed/ENEM2009/Concluintes_regulares.csv")
 
 else:
     chunksize = 10 ** 5
@@ -30,7 +30,7 @@ else:
     enem_df.to_csv("../Data/Processed/ENEM2009/All.csv", index = False)
     print(f"[INFO] {enem_df.shape[0]} participantes no total.")
     
-     df = enem_df[enem_df['TP_ST_CONCLUSAO']=='2'] # Concluintes em 2009
+    df = enem_df[enem_df['TP_ST_CONCLUSAO']=='2'] # Concluintes em 2009
     df.drop(['TP_ST_CONCLUSAO'], axis=1, inplace=True)
     df.to_csv("../Data/Processed/ENEM2009/Concluintes.csv", index = False)
     print(f"[INFO] {df.shape[0]} participantes concluintes no total.")
@@ -52,7 +52,7 @@ questoes_pd = pd.read_csv("../Data/Original/microdados_enem_2009/Dados/ITENS_PRO
 
 print("[INFO] Gerando tabelas de acerto por competência...")
 # Para cada competência
-competencias = ['CN', 'CH', 'LC', 'MT']
+competencias = ['LC', 'CN', 'CH', 'MT']
 #cod_comp = {'CN': '49', 'CH': '53', 'LC': '57', 'MT': '61'}
 
 for comp in competencias:
@@ -61,13 +61,16 @@ for comp in competencias:
     df_comp = enem_df[enem_df['TP_PRESENCA_'+comp]==1].copy()
     df_comp = df_comp[['CO_PROVA_'+comp, 'TX_RESPOSTAS_'+comp, 'TX_GABARITO_'+comp, 'NU_NOTA_'+comp]]
 
-    cadernos_comp = questoes_pd[questoes_pd['SG_AREA']==comp]['CO_PROVA'].unique()
+    if comp=='LC':
+        cadernos_comp = questoes_pd[questoes_pd['SG_AREA']=='LCT']['CO_PROVA'].unique()
+    else:
+        cadernos_comp = questoes_pd[questoes_pd['SG_AREA']==comp]['CO_PROVA'].unique()
     # Gera colunas indicando se o candidato acertou ou não a questão
     for i_cad in range(len(cadernos_comp)):
         caderno = int(cadernos_comp[i_cad])
         print(f"[INFO]    Processando caderno {caderno} ({i_cad+1}/{len(cadernos_comp)})...", end='')
         itens_list = questoes_pd[questoes_pd['CO_PROVA']==caderno]['CO_ITEM'].copy().reset_index(drop=True).sort_values()
-        for i in range(45):
+        for i in range(len(itens_list)):
             item_id = str(itens_list.iloc[i])
             s = "Item "+item_id
             if s not in df_comp.columns:
@@ -82,7 +85,7 @@ for comp in competencias:
     df_comp['NU_NOTA_'+comp] = pd.to_numeric(df_comp['NU_NOTA_'+comp])
     df_comp.drop(['CO_PROVA_'+comp,'TX_RESPOSTAS_'+comp, 'TX_GABARITO_'+comp], axis=1, inplace=True)
 
-    df_comp.to_csv("../Data/Processed/ENEM2009/Concluintes_"+comp+".csv", index = False)
+    df_comp.to_csv("../Data/Processed/ENEM2009/Concluintes_regulares_"+comp+".csv", index = False)
 
     print(f"[INFO] Processamento da competência {comp} concluído.")
 
