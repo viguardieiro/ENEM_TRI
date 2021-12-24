@@ -1,7 +1,9 @@
 # Folders
-Data/
-Images/
-Sheets/
+.ipynb_checkpoints/
+Data/Original/
+Data/.ipynb_checkpoints/
+Notebooks/.ipynb_checkpoints/
+Scripts/.ipynb_checkpoints/
 
 # Python files
 __pycache__/
