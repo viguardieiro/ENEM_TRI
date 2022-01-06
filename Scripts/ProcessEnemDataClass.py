@@ -55,17 +55,17 @@ class ProcessEnemData():
             
             print(f"[INFO] {enem_df.shape[0]} participantes no total.")
             
-            df = enem_df[enem_df['TP_ST_CONCLUSAO']=='2'] # Concluintes no ano
+            df = enem_df[enem_df['TP_ST_CONCLUSAO']=='2'].copy() # Concluintes no ano
             df.drop(['TP_ST_CONCLUSAO'], axis=1, inplace=True)
             df.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/Concluintes.csv", index = False)
             print(f"[INFO] {df.shape[0]} participantes concluintes no total.")
             
-            df = enem_df[(enem_df['TP_ST_CONCLUSAO']=='2') & (enem_df['TP_ENSINO']=='1')] # Concluintes regulares no ano
+            df = enem_df[(enem_df['TP_ST_CONCLUSAO']=='2') & (enem_df['TP_ENSINO']=='1')].copy() # Concluintes regulares no ano
             df.drop(['TP_ST_CONCLUSAO'], axis=1, inplace=True)
             df.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/Concluintes_regular.csv", index = False)
             print(f"[INFO] {df.shape[0]} participantes concluintes regulares.")
 
-            df = enem_df[(enem_df['TP_ST_CONCLUSAO']!='2') | (enem_df['TP_ENSINO']!='1')] # Não concluintes no ano
+            df = enem_df[(enem_df['TP_ST_CONCLUSAO']!='2') | (enem_df['TP_ENSINO']!='1')].copy() # Não concluintes no ano
             df.drop(['TP_ST_CONCLUSAO'], axis=1, inplace=True)
             df.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/NaoConcluintes.csv", index = False)
             print(f"[INFO] {df.shape[0]} participantes não concluintes no total.")
@@ -75,7 +75,7 @@ class ProcessEnemData():
            
         return self.df
     
-    def process_competence(self, comp, itens_anulados, enem_df=None, file_name="Concluintes"):
+    def process_competence(self, comp, itens_anulados, enem_df=None, all_p=True, concluintes=True):
         if enem_df is None:
             enem_df = self.df
        
@@ -86,9 +86,13 @@ class ProcessEnemData():
 
         # Filtra alunos presentes na prova
         df_comp = enem_df[enem_df['TP_PRESENCA_'+comp]==1].copy()
-        df_comp = df_comp[['CO_PROVA_'+comp, 'TX_RESPOSTAS_'+comp, 'TX_GABARITO_'+comp, 'NU_NOTA_'+comp]]
+        df_comp = df_comp[['CO_PROVA_'+comp, 'TX_RESPOSTAS_'+comp, 'TX_GABARITO_'+comp, 'NU_NOTA_'+comp,
+                          'TP_ST_CONCLUSAO', 'TP_ENSINO']]
         
-        cadernos_comp = questoes_pd[questoes_pd['SG_AREA']==comp]['CO_PROVA'].unique()
+        cadernos_comp = df_comp[['CO_PROVA_'+comp, 'TX_RESPOSTAS_'+comp]].groupby('CO_PROVA_'+comp).count()
+        cadernos_comp = list(cadernos_comp[cadernos_comp['TX_RESPOSTAS_'+comp]>10000].index)
+    
+        df_comp = df_comp[df_comp['CO_PROVA_'+comp].isin(cadernos_comp)]
         # Gera colunas indicando se o candidato acertou ou não a questão
         for i_cad in range(len(cadernos_comp)):
             caderno = int(cadernos_comp[i_cad])
@@ -105,12 +109,20 @@ class ProcessEnemData():
                     df_comp.loc[df_comp['CO_PROVA_'+comp]==caderno,s] = df_comp[df_comp['CO_PROVA_'+comp]==caderno][s].astype(int)
 
             print(f"Concluído.")
-
+           
+        df_comp.dropna(axis=0, how='any', inplace=True)
         # Transforma a coluna de notas em númerico
         df_comp['NU_NOTA_'+comp] = pd.to_numeric(df_comp['NU_NOTA_'+comp])
         df_comp.drop(['CO_PROVA_'+comp,'TX_RESPOSTAS_'+comp, 'TX_GABARITO_'+comp], axis=1, inplace=True)
 
-        df_comp.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/"+file_name+"_"+comp+".csv", index = False)
+        if concluintes:
+            df = df_comp[(df_comp['TP_ST_CONCLUSAO']==2) & (df_comp['TP_ENSINO']==1)].copy()
+            df.drop(['TP_ST_CONCLUSAO', 'TP_ENSINO'], axis=1, inplace=True)
+            df.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/Concluintes_regulares_"+comp+".csv", index = False)
+    
+        if all_p:
+            df_comp.drop(['TP_ST_CONCLUSAO', 'TP_ENSINO'], axis=1, inplace=True)
+            df_comp.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/All_"+comp+".csv", index = False)
 
         print(f"[INFO] Processamento da competência {comp} concluído.")
 
