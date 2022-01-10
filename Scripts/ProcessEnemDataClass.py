@@ -15,6 +15,7 @@ class ProcessEnemData():
         self.clean_file_path = "../Data/Processed/ENEM"+str(self.ano)+"/All.csv"
 
         self.df = None
+        self.df_grupo = None
 
     def get_data(self, chunksize = 10 ** 5):
         print(f"[INFO] Processando dados do ENEM {self.ano}...")
@@ -28,6 +29,7 @@ class ProcessEnemData():
             print("[INFO] Arquivo de dados não encontrado.")
             print("[INFO] Processando dados...")
             features = ['NU_INSCRICAO', 'TP_DEPENDENCIA_ADM_ESC', 'TP_ST_CONCLUSAO', 'TP_ENSINO',
+                        'CO_MUNICIPIO_RESIDENCIA', 'SG_UF_ESC', 'TP_SEXO', 'Q006',
                         'TP_PRESENCA_CN',  'TP_PRESENCA_CH',  'TP_PRESENCA_LC',  'TP_PRESENCA_MT',
                         'NU_NOTA_CN',      'NU_NOTA_CH',      'NU_NOTA_LC',      'NU_NOTA_MT', 
                         'CO_PROVA_CN',     'CO_PROVA_CH',     'CO_PROVA_LC',     'CO_PROVA_MT', 
@@ -75,64 +77,111 @@ class ProcessEnemData():
            
         return self.df
     
-    def process_competence(self, comp, itens_anulados, enem_df=None, all_p=True, concluintes=True):
-        if enem_df is None:
-            enem_df = self.df
+    def process_competence(self, comp, itens_anulados, all_p=True, concluintes=True):
        
-        questoes_pd = pd.read_csv("../Data/Original/microdados_enem_"+str(self.ano)+"/DADOS/ITENS_PROVA_"+str(self.ano)+".csv",
+        if Path("../Data/Processed/ENEM"+str(self.ano)+"/All_CH.csv").exists():
+            print("[INFO] Tabelas de acerto por questão já existem.")
+        else:
+            enem_df = "../Data/Processed/ENEM"+str(self.ano)+"/All.csv"
+            
+            questoes_pd = pd.read_csv("../Data/Original/microdados_enem_"+str(self.ano)+"/DADOS/ITENS_PROVA_"+str(self.ano)+".csv",
                         sep=';')
 
-        print(f"[INFO] Gerando tabelas de acerto para {comp}...")
+            print(f"[INFO] Gerando tabelas de acerto para {comp}...")
 
-        # Filtra alunos presentes na prova
-        df_comp = enem_df[enem_df['TP_PRESENCA_'+comp]==1].copy()
-        df_comp = df_comp[['CO_PROVA_'+comp, 'TX_RESPOSTAS_'+comp, 'TX_GABARITO_'+comp, 'NU_NOTA_'+comp,
-                          'TP_ST_CONCLUSAO', 'TP_ENSINO']]
+            # Filtra alunos presentes na prova
+            df_comp = enem_df[enem_df['TP_PRESENCA_'+comp]==1].copy()
+            df_comp = df_comp[['NU_INSCRICAO','CO_PROVA_'+comp, 'TX_RESPOSTAS_'+comp, 'TX_GABARITO_'+comp, 'NU_NOTA_'+comp,
+                              'TP_ST_CONCLUSAO', 'TP_ENSINO']]
+
+            cadernos_comp = df_comp[['CO_PROVA_'+comp, 'TX_RESPOSTAS_'+comp]].groupby('CO_PROVA_'+comp).count()
+            cadernos_comp = list(cadernos_comp[cadernos_comp['TX_RESPOSTAS_'+comp]>10000].index)
+
+            df_comp = df_comp[df_comp['CO_PROVA_'+comp].isin(cadernos_comp)]
+            # Gera colunas indicando se o candidato acertou ou não a questão
+            for i_cad in range(len(cadernos_comp)):
+                caderno = int(cadernos_comp[i_cad])
+                print(f"[INFO]    Processando caderno {caderno} ({i_cad+1}/{len(cadernos_comp)})...", end='')
+                itens_list = questoes_pd[questoes_pd['CO_PROVA']==caderno]['CO_ITEM'].copy().reset_index(drop=True).sort_values()
+                for i in range(45):
+                    item_id = str(itens_list.iloc[i])
+                    if item_id not in itens_anulados:
+                        s = "Item "+item_id
+                        if s not in df_comp.columns:
+                            df_comp[s] = 0
+
+                        df_comp.loc[df_comp['CO_PROVA_'+comp]==caderno,s] = df_comp[df_comp['CO_PROVA_'+comp]==caderno]['TX_RESPOSTAS_'+comp].str[i]==df_comp[df_comp['CO_PROVA_'+comp]==caderno]['TX_GABARITO_'+comp].str[i]
+                        df_comp.loc[df_comp['CO_PROVA_'+comp]==caderno,s] = df_comp[df_comp['CO_PROVA_'+comp]==caderno][s].astype(int)
+
+                print(f"Concluído.")
+
+            df_comp.dropna(axis=0, how='any', inplace=True)
+            # Transforma a coluna de notas em númerico
+            df_comp['NU_NOTA_'+comp] = pd.to_numeric(df_comp['NU_NOTA_'+comp])
+            df_comp.drop(['CO_PROVA_'+comp,'TX_RESPOSTAS_'+comp, 'TX_GABARITO_'+comp], axis=1, inplace=True)
+
+            if concluintes:
+                df = df_comp[(df_comp['TP_ST_CONCLUSAO']==2) & (df_comp['TP_ENSINO']==1)].copy()
+                df.drop(['TP_ST_CONCLUSAO', 'TP_ENSINO'], axis=1, inplace=True)
+                df.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/Concluintes_regulares_"+comp+".csv", index = False)
+
+            if all_p:
+                df_comp.drop(['TP_ST_CONCLUSAO', 'TP_ENSINO'], axis=1, inplace=True)
+                df_comp.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/All_"+comp+".csv", index = False)
+
+            print(f"[INFO] Processamento da competência {comp} concluído.")
+
+            print(f"[INFO] {df_comp.shape[0]} provas de {comp}.")
+            print('[INFO] Nota mínima: ', df_comp['NU_NOTA_'+comp].min())
+            print('[INFO] Nota mínima (diferente de zero): ', df_comp[df_comp['NU_NOTA_'+comp]!=0]['NU_NOTA_'+comp].min())
+            print('[INFO] Nota máxima: ', df_comp['NU_NOTA_'+comp].max())
+            print('---------------------------')
+
+            return df_comp
+
+    def get_group_features(self, group_features=['NU_INSCRICAO','CO_MUNICIPIO_RESIDENCIA', 'SG_UF_ESC', 
+                                            'TP_SEXO','Q006','TP_DEPENDENCIA_ADM_ESC', 'TP_ENSINO']):
         
-        cadernos_comp = df_comp[['CO_PROVA_'+comp, 'TX_RESPOSTAS_'+comp]].groupby('CO_PROVA_'+comp).count()
-        cadernos_comp = list(cadernos_comp[cadernos_comp['TX_RESPOSTAS_'+comp]>10000].index)
+        if Path("../Data/Processed/ENEM"+str(self.ano)+"/All_grupos.csv").exists():
+            print("[INFO] Tabela de grupos já existe.")
+            df_grupo = pd.read_csv("../Data/Processed/ENEM"+str(self.ano)+"/All_grupos.csv")
+        else:
+            print("[INFO] Tabela de grupos não encontrada.")
+            print("[INFO] Gerando tabela de grupos...")
+            
+            enem_df = pd.read_csv("../Data/Processed/ENEM"+str(self.ano)+"/All.csv")
+            
+            df_grupo = enem_df[group_features].copy()
+            df_grupo.rename(columns={'Q006': 'RENDA'}, inplace=True)
+            df_grupo['REGIAO'] = df_grupo['CO_MUNICIPIO_RESIDENCIA'].apply(str).str[0]
+            df_grupo['REGIAO'] = df_grupo['REGIAO'].replace('n', None)
+            df_grupo['REGIAO'] = pd.to_numeric(df_grupo['REGIAO'])
+
+            df_grupo.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/All_grupos.csv", index = False)
+            
+        self.df_grupo = df_grupo
+        return df_grupo
     
-        df_comp = df_comp[df_comp['CO_PROVA_'+comp].isin(cadernos_comp)]
-        # Gera colunas indicando se o candidato acertou ou não a questão
-        for i_cad in range(len(cadernos_comp)):
-            caderno = int(cadernos_comp[i_cad])
-            print(f"[INFO]    Processando caderno {caderno} ({i_cad+1}/{len(cadernos_comp)})...", end='')
-            itens_list = questoes_pd[questoes_pd['CO_PROVA']==caderno]['CO_ITEM'].copy().reset_index(drop=True).sort_values()
-            for i in range(45):
-                item_id = str(itens_list.iloc[i])
-                if item_id not in itens_anulados:
-                    s = "Item "+item_id
-                    if s not in df_comp.columns:
-                        df_comp[s] = 0
+    def process_region_competence(self):
+        print("[INFO] Verificando processamento de dados por região...")
+        if Path("../Data/Processed/ENEM"+str(self.ano)+"/CR_regiaoN_LC.csv").exists():
+            print("[INFO] Dados por região já foram processados.")
+        else:
+            print("[INFO] Dados por região não foram encontrados.")
+            print("[INFO] Processando dados por região...")
 
-                    df_comp.loc[df_comp['CO_PROVA_'+comp]==caderno,s] = df_comp[df_comp['CO_PROVA_'+comp]==caderno]['TX_RESPOSTAS_'+comp].str[i]==df_comp[df_comp['CO_PROVA_'+comp]==caderno]['TX_GABARITO_'+comp].str[i]
-                    df_comp.loc[df_comp['CO_PROVA_'+comp]==caderno,s] = df_comp[df_comp['CO_PROVA_'+comp]==caderno][s].astype(int)
-
-            print(f"Concluído.")
-           
-        df_comp.dropna(axis=0, how='any', inplace=True)
-        # Transforma a coluna de notas em númerico
-        df_comp['NU_NOTA_'+comp] = pd.to_numeric(df_comp['NU_NOTA_'+comp])
-        df_comp.drop(['CO_PROVA_'+comp,'TX_RESPOSTAS_'+comp, 'TX_GABARITO_'+comp], axis=1, inplace=True)
-
-        if concluintes:
-            df = df_comp[(df_comp['TP_ST_CONCLUSAO']==2) & (df_comp['TP_ENSINO']==1)].copy()
-            df.drop(['TP_ST_CONCLUSAO', 'TP_ENSINO'], axis=1, inplace=True)
-            df.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/Concluintes_regulares_"+comp+".csv", index = False)
-    
-        if all_p:
-            df_comp.drop(['TP_ST_CONCLUSAO', 'TP_ENSINO'], axis=1, inplace=True)
-            df_comp.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/All_"+comp+".csv", index = False)
-
-        print(f"[INFO] Processamento da competência {comp} concluído.")
-
-        print(f"[INFO] {df_comp.shape[0]} provas de {comp}.")
-        print('[INFO] Nota mínima: ', df_comp['NU_NOTA_'+comp].min())
-        print('[INFO] Nota mínima (diferente de zero): ', df_comp[df_comp['NU_NOTA_'+comp]!=0]['NU_NOTA_'+comp].min())
-        print('[INFO] Nota máxima: ', df_comp['NU_NOTA_'+comp].max())
-        print('---------------------------')
-        
-        return df_comp
+            regiao_map = {1: 'N', 2: 'NE', 3:'SE', 4:'S', 5:'CO'}
+            regioes = self.df_grupo['REGIAO'].unique()
+            for reg in regioes:
+                nu_regiao = self.df_grupo[self.df_grupo['REGIAO']==reg]['NU_INSCRICAO'].tolist()
+                print(f"[INFO] Processando região {regiao_map[reg]}...")
+                for comp in ['LC', 'CN', 'CH', 'MT']:
+                    concluintes_df = pd.read_csv("../Data/Processed/ENEM"+str(self.ano)+"/Concluintes_regulares_"+comp+".csv")
+                    df_regiao = concluintes_df[concluintes_df['NU_INSCRICAO'].isin(nu_regiao)]
+                    print(f"[INFO]     Comeptência {comp}: {df_regiao.shape[0]} concluintes regulares.")
+                    df_regiao.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/CR_regiao"+regiao_map[reg]+"_"+comp+".csv", index=False)
+                print('---------------------------')
+            print("[INFO] Processamento de dados por região concluído.")
         
     def filter_data(self, grupos=None):
         if grupos is None:

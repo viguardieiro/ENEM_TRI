@@ -10,7 +10,8 @@ itens_anulados = {'CN': ["45168"],
                      'MT': []}
 
 for comp in competencias:
-    penem.process_competence(comp, itens_anulados[comp], enem_df=enem_df, 
-                             all_p=True, concluintes=True)
+    penem.process_competence(comp, itens_anulados[comp], all_p=True, concluintes=True)
+    
+df_grupo = penem.get_group_features()
 
-#grupo_df = penem.filter_data()
+penem.process_region_competence()
