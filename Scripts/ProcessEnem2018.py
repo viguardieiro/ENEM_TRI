@@ -9,31 +9,15 @@ print("[INFO] Processando dados de todos os alunos...")
 enem_df = penem.get_data()
 print("[INFO] Processamento dos dados de todos os alunos concluído.")
 
-# Processa dados dos concluintes
-print("[INFO] Processando dados dos alunos concluintes de 2018...")
-concluinte_df = pd.read_csv("../Data/Processed/ENEM2018/Concluintes.csv")
-
 competencias = ['CN', 'CH', 'LC', 'MT']
 itens_anulados = {'CN': [],
-                     'CH': [],
-                     'LC': [],
-                     'MT': []}
+                  'CH': [],
+                  'LC': [],
+                  'MT': ["30294"]}
 
 for comp in competencias:
-    penem.process_competence(comp, itens_anulados[comp], enem_df=concluinte_df)
-print("[INFO] Processamento dos dados dos alunos concluintes de 2018 concluído.")
-print("-------------------------------------------------")
-
-# Processa dados dos concluintes regulares
-concluinte_reg_df = pd.read_csv("../Data/Processed/ENEM2018/Concluintes_regular.csv")
-
-competencias = ['CN', 'CH', 'LC', 'MT']
-itens_anulados = {'CN': [],
-                     'CH': [],
-                     'LC': [],
-                     'MT': []}
-
-for comp in competencias:
-    penem.process_competence(comp, itens_anulados[comp], enem_df=concluinte_reg_df, file_name="Concluintes_regular")
+    penem.process_competence(comp, itens_anulados[comp], all_p=True, concluintes=True)
     
-#grupo_df = penem.filter_data()
+df_grupo = penem.get_group_features()
+
+penem.process_region_competence()
