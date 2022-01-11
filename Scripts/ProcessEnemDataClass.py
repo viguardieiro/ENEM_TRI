@@ -34,7 +34,8 @@ class ProcessEnemData():
                         'NU_NOTA_CN',      'NU_NOTA_CH',      'NU_NOTA_LC',      'NU_NOTA_MT', 
                         'CO_PROVA_CN',     'CO_PROVA_CH',     'CO_PROVA_LC',     'CO_PROVA_MT', 
                         'TX_RESPOSTAS_CN', 'TX_RESPOSTAS_CH', 'TX_RESPOSTAS_LC', 'TX_RESPOSTAS_MT',
-                        'TX_GABARITO_CN',  'TX_GABARITO_CH',  'TX_GABARITO_LC',  'TX_GABARITO_MT']
+                        'TX_GABARITO_CN',  'TX_GABARITO_CH',  'TX_GABARITO_LC',  'TX_GABARITO_MT',
+                        'TP_LINGUA']
             
             enem_df = None
 
@@ -79,10 +80,10 @@ class ProcessEnemData():
     
     def process_competence(self, comp, itens_anulados, all_p=True, concluintes=True):
        
-        if Path("../Data/Processed/ENEM"+str(self.ano)+"/All_CH.csv").exists():
-            print("[INFO] Tabelas de acerto por questão já existem.")
+        if Path("../Data/Processed/ENEM"+str(self.ano)+"/All_"+comp+".csv").exists():
+            print("[INFO] Tabelas de acerto por questão para "+comp+" já existem.")
         else:
-            enem_df = "../Data/Processed/ENEM"+str(self.ano)+"/All.csv"
+            enem_df = pd.read_csv("../Data/Processed/ENEM"+str(self.ano)+"/All.csv")
             
             questoes_pd = pd.read_csv("../Data/Original/microdados_enem_"+str(self.ano)+"/DADOS/ITENS_PROVA_"+str(self.ano)+".csv",
                         sep=';')
@@ -91,8 +92,14 @@ class ProcessEnemData():
 
             # Filtra alunos presentes na prova
             df_comp = enem_df[enem_df['TP_PRESENCA_'+comp]==1].copy()
-            df_comp = df_comp[['NU_INSCRICAO','CO_PROVA_'+comp, 'TX_RESPOSTAS_'+comp, 'TX_GABARITO_'+comp, 'NU_NOTA_'+comp,
-                              'TP_ST_CONCLUSAO', 'TP_ENSINO']]
+
+            if comp=='LC':
+                df_comp = df_comp[['NU_INSCRICAO','CO_PROVA_'+comp, 'TX_RESPOSTAS_'+comp, 'TX_GABARITO_'+comp, 'NU_NOTA_'+comp,
+                              'TP_ST_CONCLUSAO', 'TP_ENSINO', 'TP_LINGUA']]
+            else:
+                df_comp = df_comp[['NU_INSCRICAO','CO_PROVA_'+comp, 'TX_RESPOSTAS_'+comp, 'TX_GABARITO_'+comp, 'NU_NOTA_'+comp,
+                                  'TP_ST_CONCLUSAO', 'TP_ENSINO']]
+            
 
             cadernos_comp = df_comp[['CO_PROVA_'+comp, 'TX_RESPOSTAS_'+comp]].groupby('CO_PROVA_'+comp).count()
             cadernos_comp = list(cadernos_comp[cadernos_comp['TX_RESPOSTAS_'+comp]>10000].index)
@@ -102,8 +109,9 @@ class ProcessEnemData():
             for i_cad in range(len(cadernos_comp)):
                 caderno = int(cadernos_comp[i_cad])
                 print(f"[INFO]    Processando caderno {caderno} ({i_cad+1}/{len(cadernos_comp)})...", end='')
-                itens_list = questoes_pd[questoes_pd['CO_PROVA']==caderno]['CO_ITEM'].copy().reset_index(drop=True).sort_values()
-                for i in range(45):
+                itens_list = questoes_pd[questoes_pd['CO_PROVA']==caderno]['CO_ITEM'].copy().reset_index(drop=True)
+                
+                for i in range(len(itens_list)):
                     item_id = str(itens_list.iloc[i])
                     if item_id not in itens_anulados:
                         s = "Item "+item_id
@@ -112,7 +120,10 @@ class ProcessEnemData():
 
                         df_comp.loc[df_comp['CO_PROVA_'+comp]==caderno,s] = df_comp[df_comp['CO_PROVA_'+comp]==caderno]['TX_RESPOSTAS_'+comp].str[i]==df_comp[df_comp['CO_PROVA_'+comp]==caderno]['TX_GABARITO_'+comp].str[i]
                         df_comp.loc[df_comp['CO_PROVA_'+comp]==caderno,s] = df_comp[df_comp['CO_PROVA_'+comp]==caderno][s].astype(int)
-
+                        if comp=='LC':
+                            df_comp.loc[((df_comp['CO_PROVA_'+comp]==caderno) & (df_comp['TX_GABARITO_'+comp].str[i]=='9'))
+                                        ,s] = None
+                
                 print(f"Concluído.")
 
             df_comp.dropna(axis=0, how='any', inplace=True)
