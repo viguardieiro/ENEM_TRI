@@ -2,7 +2,7 @@ import pandas as pd
 from pathlib import Path
 
 features = ['TP_DEPENDENCIA_ADM_ESC', 'TP_ST_CONCLUSAO', 'TP_ENSINO', 'NU_INSCRICAO',
-            'CO_MUNICIPIO_RESIDENCIA', 'SG_UF_ESC', 'Q1', 'Q3', 'Q21',
+            'CO_MUNICIPIO_RESIDENCIA', 'SG_UF_ESC', 'Q1', 'Q3', 'Q21', 'TP_SEXO',
             'TP_PRESENCA_CN',  'TP_PRESENCA_CH',  'TP_PRESENCA_LC',  'TP_PRESENCA_MT',
             'NU_NOTA_CN',      'NU_NOTA_CH',      'NU_NOTA_LC',      'NU_NOTA_MT', 
             'CO_PROVA_CN',     'CO_PROVA_CH',     'CO_PROVA_LC',     'CO_PROVA_MT', 
@@ -119,7 +119,7 @@ else:
     print("[INFO] Gerando tabela de grupos...")
     
     df_grupo = enem_df[['NU_INSCRICAO','CO_MUNICIPIO_RESIDENCIA', 'SG_UF_ESC', 'Q1','Q3', 'Q21',
-                       'TP_DEPENDENCIA_ADM_ESC', 'TP_ENSINO']].copy()
+                       'TP_DEPENDENCIA_ADM_ESC', 'TP_ENSINO', 'TP_SEXO']].copy()
     df_grupo.rename(columns={"Q1": "GENERO", "Q3": "RAÇA", 'Q21': 'RENDA'}, inplace=True)
     df_grupo['REGIAO'] = df_grupo['CO_MUNICIPIO_RESIDENCIA'].apply(str).str[0]
     df_grupo['REGIAO'] = df_grupo['REGIAO'].replace('n', None)
@@ -147,3 +147,24 @@ else:
             df_regiao.to_csv("../Data/Processed/ENEM2009/CR_regiao"+regiao_map[reg]+"_"+comp+".csv", index=False)
         print('---------------------------')
     print("[INFO] Processamento de dados por região concluído.")
+    
+gp_feat='TP_SEXO'
+gp_name='sexo'
+gp_map={'M':'Masculino', 'F': 'Feminino'}
+print("[INFO] Verificando processamento de dados por "+gp_name+"...")
+if Path("../Data/Processed/ENEM2009/CR_"+gp_name+"_"+gp_map[list(gp_map.keys())[0]]+"_LC.csv").exists():
+    print("[INFO] Dados por "+gp_name+" já foram processados.")
+else:
+    print("[INFO] Dados por "+gp_name+" não foram encontrados.")
+    print("[INFO] Processando dados por "+gp_name+"...")
+
+    for g in gp_map.keys():
+        nu_grupo = df_grupo[df_grupo[gp_feat]==g]['NU_INSCRICAO'].tolist()
+        print(f"[INFO] Processando {gp_name} {gp_map[g]}...")
+        for comp in ['LC', 'CN', 'CH', 'MT']:
+            concluintes_df = pd.read_csv("../Data/Processed/ENEM2009/Concluintes_regulares_"+comp+".csv")
+            df_g = concluintes_df[concluintes_df['NU_INSCRICAO'].isin(nu_grupo)]
+            print(f"[INFO]     Comeptência {comp}: {df_g.shape[0]} concluintes regulares.")
+            df_g.to_csv("../Data/Processed/ENEM2009/CR_"+gp_name+"_"+gp_map[g]+"_"+comp+".csv", index=False)
+        print('---------------------------')
+    print("[INFO] Processamento de dados por "+gp_name+" concluído.")
