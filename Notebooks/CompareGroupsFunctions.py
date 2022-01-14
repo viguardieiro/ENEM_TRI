@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 import math
 
 class GroupComparator():
@@ -73,6 +74,16 @@ class GroupComparator():
         for r in range(rows):
             axs[r,0].set_ylabel('Quantidade')
 
+        plt.show()
+        
+    def plot_hist_scores_2groups(self, binsize=20):
+        sns.histplot(data=self.df_gp[self.gps[1]], x='NU_NOTA_'+self.comp, color="red", 
+                     label=self.gp_map[self.gps[1]], alpha=0.5, element="step", bins=range(0, 1000, binsize))
+        sns.histplot(data=self.df_gp[self.gps[0]], x='NU_NOTA_'+self.comp, color="blue", 
+                     label=self.gp_map[self.gps[0]], alpha=0.5, element="step", bins=range(0, 1000, binsize))
+
+        plt.title('Histograma de notas - '+self.comp)
+        plt.legend() 
         plt.show()
     
     def bin_scores(self, nota_min=300, nota_max=760, step=20):
