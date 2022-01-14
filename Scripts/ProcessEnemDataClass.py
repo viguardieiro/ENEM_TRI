@@ -29,7 +29,7 @@ class ProcessEnemData():
             print("[INFO] Arquivo de dados não encontrado.")
             print("[INFO] Processando dados...")
             features = ['NU_INSCRICAO', 'TP_DEPENDENCIA_ADM_ESC', 'TP_ST_CONCLUSAO', 'TP_ENSINO',
-                        'CO_MUNICIPIO_RESIDENCIA', 'SG_UF_ESC', 'TP_SEXO', 'Q006',
+                        'CO_MUNICIPIO_RESIDENCIA', 'SG_UF_ESC', 'TP_SEXO', 'Q006', 'TP_COR_RACA',
                         'TP_PRESENCA_CN',  'TP_PRESENCA_CH',  'TP_PRESENCA_LC',  'TP_PRESENCA_MT',
                         'NU_NOTA_CN',      'NU_NOTA_CH',      'NU_NOTA_LC',      'NU_NOTA_MT', 
                         'CO_PROVA_CN',     'CO_PROVA_CH',     'CO_PROVA_LC',     'CO_PROVA_MT', 
@@ -151,7 +151,7 @@ class ProcessEnemData():
             return df_comp
 
     def get_group_features(self, group_features=['NU_INSCRICAO','CO_MUNICIPIO_RESIDENCIA', 'SG_UF_ESC', 
-                                            'TP_SEXO','Q006','TP_DEPENDENCIA_ADM_ESC', 'TP_ENSINO']):
+                                            'TP_SEXO','TP_COR_RACA','Q006','TP_DEPENDENCIA_ADM_ESC', 'TP_ENSINO']):
         
         if Path("../Data/Processed/ENEM"+str(self.ano)+"/All_grupos.csv").exists():
             print("[INFO] Tabela de grupos já existe.")
@@ -193,6 +193,26 @@ class ProcessEnemData():
                     df_regiao.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/CR_regiao"+regiao_map[reg]+"_"+comp+".csv", index=False)
                 print('---------------------------')
             print("[INFO] Processamento de dados por região concluído.")
+            
+    def process_group_competence(self, gp_feat='TP_COR_RACA', gp_name='raca', 
+                                gp_map={0:'ND', 1: 'Branca', 2: 'Preta', 3:'Parda', 4:'Amarela', 5:'Indigena'}):
+        print("[INFO] Verificando processamento de dados por "+gp_name+"...")
+        if Path("../Data/Processed/ENEM"+str(self.ano)+"/CR_"+gp_name+"_"+gp_map[1]+"_LC.csv").exists():
+            print("[INFO] Dados por "+gp_name+" já foram processados.")
+        else:
+            print("[INFO] Dados por "+gp_name+" não foram encontrados.")
+            print("[INFO] Processando dados por "+gp_name+"...")
+
+            for g in gp_map.keys():
+                nu_grupo = self.df_grupo[self.df_grupo[gp_feat]==g]['NU_INSCRICAO'].tolist()
+                print(f"[INFO] Processando raça {gp_map[g]}...")
+                for comp in ['LC', 'CN', 'CH', 'MT']:
+                    concluintes_df = pd.read_csv("../Data/Processed/ENEM"+str(self.ano)+"/Concluintes_regulares_"+comp+".csv")
+                    df_g = concluintes_df[concluintes_df['NU_INSCRICAO'].isin(nu_grupo)]
+                    print(f"[INFO]     Comeptência {comp}: {df_g.shape[0]} concluintes regulares.")
+                    df_g.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/CR_"+gp_name+"_"+gp_map[g]+"_"+comp+".csv", index=False)
+                print('---------------------------')
+            print("[INFO] Processamento de dados por "+gp_name+" concluído.")
         
     def filter_data(self, grupos=None):
         if grupos is None:
