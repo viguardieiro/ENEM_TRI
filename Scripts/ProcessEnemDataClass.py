@@ -197,7 +197,7 @@ class ProcessEnemData():
     def process_group_competence(self, gp_feat='TP_COR_RACA', gp_name='raca', 
                                 gp_map={0:'ND', 1: 'Branca', 2: 'Preta', 3:'Parda', 4:'Amarela', 5:'Indigena'}):
         print("[INFO] Verificando processamento de dados por "+gp_name+"...")
-        if Path("../Data/Processed/ENEM"+str(self.ano)+"/CR_"+gp_name+"_"+gp_map[1]+"_LC.csv").exists():
+        if Path("../Data/Processed/ENEM"+str(self.ano)+"/CR_"+gp_name+"_"+gp_map[list(gp_map.keys())[0]]+"_LC.csv").exists():
             print("[INFO] Dados por "+gp_name+" já foram processados.")
         else:
             print("[INFO] Dados por "+gp_name+" não foram encontrados.")
@@ -205,7 +205,7 @@ class ProcessEnemData():
 
             for g in gp_map.keys():
                 nu_grupo = self.df_grupo[self.df_grupo[gp_feat]==g]['NU_INSCRICAO'].tolist()
-                print(f"[INFO] Processando raça {gp_map[g]}...")
+                print(f"[INFO] Processando {gp_name} {gp_map[g]}...")
                 for comp in ['LC', 'CN', 'CH', 'MT']:
                     concluintes_df = pd.read_csv("../Data/Processed/ENEM"+str(self.ano)+"/Concluintes_regulares_"+comp+".csv")
                     df_g = concluintes_df[concluintes_df['NU_INSCRICAO'].isin(nu_grupo)]
