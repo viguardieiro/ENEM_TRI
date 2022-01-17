@@ -40,3 +40,4 @@ filename                           |  description
 Compare Regions ENEM (year).ipynb  |  Analysis and comparison of the proportion of correct answers per question given the participants' score for each region of Brazil.
 Compare Races ENEM (year).ipynb    |  Analysis and comparison of the proportion of correct answers per question given the participants' score for the main self-declared races.
 Compare Sex ENEM (year).ipynb      |  Analysis and comparison of the proportion of correct answers per question given the participants' score per self-declared sex.
+Compare Economic Class ENEM (year).ipynb      |  Analysis and comparison of the proportion of correct answers per question given the participants' score per economic class.
