@@ -39,7 +39,7 @@ class GroupComparator():
             else:
                 nu_grupo = df_grupo[df_grupo[self.gp_feat]==g]['NU_INSCRICAO'].tolist()
                 
-                df = concluintes_df[concluintes_df['NU_INSCRICAO'].isin(nu_grupo)]
+                df = concluintes_df[concluintes_df['NU_INSCRICAO'].isin(nu_grupo)].copy()
 
             self.df_gp[g] = df
         return self.df_gp
@@ -100,7 +100,7 @@ class GroupComparator():
         bins = np.arange(nota_min,nota_max,step)
 
         for g in self.gps:
-            self.df_gp[g].loc[:,'Range'+self.comp] = pd.cut(self.df_gp[g]['NU_NOTA_'+self.comp], bins, right=False)
+            self.df_gp[g]['Range'+self.comp] = pd.cut(self.df_gp[g]['NU_NOTA_'+self.comp], bins, right=False)
 
             bin_r = self.df_gp[g][self.df_gp[g]['NU_NOTA_'+self.comp]!=0].groupby('Range'+self.comp).count()[['NU_INSCRICAO']]
             bin_r = bin_r.rename(columns={'NU_INSCRICAO': 'Total'})
@@ -123,7 +123,8 @@ class GroupComparator():
         return self.auc_gp
 
     def sort_abs_auc_dif(self):
-        sorted_auc_dif = self.auc_gp.diff(axis=1).abs().max(axis=1).sort_values()
+        auc_dif = self.auc_gp.diff(axis=1).abs().max(axis=1)/self.auc_gp['Geral']
+        sorted_auc_dif = auc_dif.sort_values()
         print(sorted_auc_dif)
         
         return sorted_auc_dif
