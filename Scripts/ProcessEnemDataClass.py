@@ -16,6 +16,7 @@ class ProcessEnemData():
 
         self.df = None
         self.df_grupo = None
+        self.base_path = "../Data/Processed/ENEM"+str(self.ano)+"/CR_data/"
 
     def get_data(self, chunksize = 10 ** 5):
         print(f"[INFO] Processando dados do ENEM {self.ano}...")
@@ -41,7 +42,7 @@ class ProcessEnemData():
 
             with pd.read_csv(self.original_file_path,
                         sep=';', encoding='latin-1', chunksize=chunksize, 
-                        error_bad_lines=False, index_col=False, dtype='unicode') as reader:
+                        index_col=False, dtype='unicode') as reader:
                 for chunk in reader:
                     df = chunk[features]
 
@@ -72,14 +73,14 @@ class ProcessEnemData():
             df.drop(['TP_ST_CONCLUSAO'], axis=1, inplace=True)
             df.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/NaoConcluintes.csv", index = False)
             print(f"[INFO] {df.shape[0]} participantes não concluintes no total.")
-            print('---------------------------')
+            print('-------------------------------------------------------------')
             
             self.df = enem_df
            
         return self.df
     
     def process_competence(self, comp, itens_anulados, all_p=True, concluintes=True):
-       
+        Path(self.base_path).mkdir(parents=True, exist_ok=True)
         if Path("../Data/Processed/ENEM"+str(self.ano)+"/All_"+comp+".csv").exists():
             print("[INFO] Tabelas de acerto por questão para "+comp+" já existem.")
         else:
@@ -134,7 +135,7 @@ class ProcessEnemData():
             if concluintes:
                 df = df_comp[(df_comp['TP_ST_CONCLUSAO']==2) & (df_comp['TP_ENSINO']==1)].copy()
                 df.drop(['TP_ST_CONCLUSAO', 'TP_ENSINO'], axis=1, inplace=True)
-                df.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/Concluintes_regulares_"+comp+".csv", index = False)
+                df.to_csv(self.base_path+"CR_"+comp+".csv", index = False)
 
             if all_p:
                 df_comp.drop(['TP_ST_CONCLUSAO', 'TP_ENSINO'], axis=1, inplace=True)
@@ -146,19 +147,25 @@ class ProcessEnemData():
             print('[INFO] Nota mínima: ', df_comp['NU_NOTA_'+comp].min())
             print('[INFO] Nota mínima (diferente de zero): ', df_comp[df_comp['NU_NOTA_'+comp]!=0]['NU_NOTA_'+comp].min())
             print('[INFO] Nota máxima: ', df_comp['NU_NOTA_'+comp].max())
-            print('---------------------------')
+            print('------------------------------------------------------')
 
             return df_comp
 
     def get_group_features(self, group_features=['NU_INSCRICAO','CO_MUNICIPIO_RESIDENCIA', 'SG_UF_ESC', 
-                                            'TP_SEXO','TP_COR_RACA','Q006','TP_DEPENDENCIA_ADM_ESC', 'TP_ENSINO']):
+                                            'TP_SEXO','TP_COR_RACA','Q006','TP_DEPENDENCIA_ADM_ESC', 'TP_ENSINO'],
+                          gp_map_classe = {'E': ['A','B','C','D'],
+                                           'D': ['E','F','G'],
+                                           'C': ['H','I','J','K','L','M','N'],
+                                           'B': ['O','P'],
+                                           'A': ['Q']}):
         
+        print("[INFO] Verificando processamento da tabela de grupos...")
         if Path("../Data/Processed/ENEM"+str(self.ano)+"/All_grupos.csv").exists():
-            print("[INFO] Tabela de grupos já existe.")
+            print("[INFO]    Tabela de grupos já existe.")
             df_grupo = pd.read_csv("../Data/Processed/ENEM"+str(self.ano)+"/All_grupos.csv")
         else:
-            print("[INFO] Tabela de grupos não encontrada.")
-            print("[INFO] Gerando tabela de grupos...")
+            print("[INFO]    Tabela de grupos não encontrada.")
+            print("[INFO]    Gerando tabela de grupos...")
             
             enem_df = pd.read_csv("../Data/Processed/ENEM"+str(self.ano)+"/All.csv")
             
@@ -167,52 +174,68 @@ class ProcessEnemData():
             df_grupo['REGIAO'] = df_grupo['CO_MUNICIPIO_RESIDENCIA'].apply(str).str[0]
             df_grupo['REGIAO'] = df_grupo['REGIAO'].replace('n', None)
             df_grupo['REGIAO'] = pd.to_numeric(df_grupo['REGIAO'])
+            
+            df_grupo['CLASSE'] = 0
+            for classe in gp_map_classe.keys():
+                for renda in gp_map_classe[classe]:
+                    df_grupo.loc[df_grupo['RENDA']==renda,'CLASSE'] = classe
 
             df_grupo.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/All_grupos.csv", index = False)
+            print("[INFO]    Processamento da tabela de grupos concluído.")
             
         self.df_grupo = df_grupo
+        print('------------------------------------------------------')
         return df_grupo
-    
-    def process_region_competence(self):
-        print("[INFO] Verificando processamento de dados por região...")
-        if Path("../Data/Processed/ENEM"+str(self.ano)+"/CR_regiaoN_LC.csv").exists():
-            print("[INFO] Dados por região já foram processados.")
-        else:
-            print("[INFO] Dados por região não foram encontrados.")
-            print("[INFO] Processando dados por região...")
-
-            regiao_map = {1: 'N', 2: 'NE', 3:'SE', 4:'S', 5:'CO'}
-            regioes = self.df_grupo['REGIAO'].unique()
-            for reg in regioes:
-                nu_regiao = self.df_grupo[self.df_grupo['REGIAO']==reg]['NU_INSCRICAO'].tolist()
-                print(f"[INFO] Processando região {regiao_map[reg]}...")
-                for comp in ['LC', 'CN', 'CH', 'MT']:
-                    concluintes_df = pd.read_csv("../Data/Processed/ENEM"+str(self.ano)+"/Concluintes_regulares_"+comp+".csv")
-                    df_regiao = concluintes_df[concluintes_df['NU_INSCRICAO'].isin(nu_regiao)]
-                    print(f"[INFO]     Comeptência {comp}: {df_regiao.shape[0]} concluintes regulares.")
-                    df_regiao.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/CR_regiao"+regiao_map[reg]+"_"+comp+".csv", index=False)
-                print('---------------------------')
-            print("[INFO] Processamento de dados por região concluído.")
             
     def process_group_competence(self, gp_feat='TP_COR_RACA', gp_name='raca', 
                                 gp_map={0:'ND', 1: 'Branca', 2: 'Preta', 3:'Parda', 4:'Amarela', 5:'Indigena'}):
         print("[INFO] Verificando processamento de dados por "+gp_name+"...")
-        if Path("../Data/Processed/ENEM"+str(self.ano)+"/CR_"+gp_name+"_"+gp_map[list(gp_map.keys())[0]]+"_LC.csv").exists():
-            print("[INFO] Dados por "+gp_name+" já foram processados.")
+        Path(self.base_path+gp_name).mkdir(parents=True, exist_ok=True)
+        if Path(self.base_path+gp_name+"/"+gp_name+"_"+gp_map[list(gp_map.keys())[0]]+"_LC.csv").exists():
+            print("[INFO]    Dados por "+gp_name+" já foram processados.")
         else:
-            print("[INFO] Dados por "+gp_name+" não foram encontrados.")
-            print("[INFO] Processando dados por "+gp_name+"...")
+            print("[INFO]    Dados por "+gp_name+" não foram encontrados.")
+            print("[INFO]    Processando dados por "+gp_name+"...")
 
             for g in gp_map.keys():
                 nu_grupo = self.df_grupo[self.df_grupo[gp_feat]==g]['NU_INSCRICAO'].tolist()
                 print(f"[INFO] Processando {gp_name} {gp_map[g]}...")
                 for comp in ['LC', 'CN', 'CH', 'MT']:
-                    concluintes_df = pd.read_csv("../Data/Processed/ENEM"+str(self.ano)+"/Concluintes_regulares_"+comp+".csv")
+                    concluintes_df = pd.read_csv(self.base_path+"CR_"+comp+".csv")
                     df_g = concluintes_df[concluintes_df['NU_INSCRICAO'].isin(nu_grupo)]
                     print(f"[INFO]     Comeptência {comp}: {df_g.shape[0]} concluintes regulares.")
-                    df_g.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/CR_"+gp_name+"_"+gp_map[g]+"_"+comp+".csv", index=False)
-                print('---------------------------')
-            print("[INFO] Processamento de dados por "+gp_name+" concluído.")
+                    df_g.to_csv(self.base_path+gp_name+"/"+gp_name+"_"+gp_map[g]+"_"+comp+".csv", index=False)
+                print('---')
+            print("[INFO]    Processamento de dados por "+gp_name+" concluído.")
+        print('------------------------------------------------------')
+        
+    def process_classe_renda(self, gp_map_classe = {'E': ['a','b','c','d'],
+                                                     'D': ['e','f','g'],
+                                                     'C': ['h','i','j','k','l','m','n'],
+                                                     'B': ['o','p'],
+                                                     'A': ['q']}):
+        Path(self.base_path+"classe").mkdir(parents=True, exist_ok=True)
+        print("[INFO] Verificando processamento de dados por classe...")
+        if Path(self.base_path+"classe/classe_A_LC.csv").exists():
+            print("[INFO]    Dados por classe já foram processados.")
+        else:
+            print("[INFO]    Dados por classe não foram encontrados.")
+            print("[INFO]    Processando dados por classe...")
+
+            for classe in gp_map_classe.keys():
+                print(f"[INFO] Processando classe {classe}...")
+                for comp in ['LC', 'CN', 'CH', 'MT']:
+                    classe_df = pd.DataFrame()
+                    for renda in gp_map_classe[classe]:
+                        renda_df = pd.read_csv(self.base_path+"/renda/renda_"+renda+"_"+comp+".csv")
+                        classe_df = classe_df.append(renda_df)
+                    print(f"[INFO]     Comeptência {comp}: {classe_df.shape[0]} concluintes regulares.")
+                    classe_df['CLASSE'] = classe
+                    classe_df.to_csv(self.base_path+"classe/classe_"+classe+"_"+comp+".csv", 
+                                     index=False)
+                print('---')
+            print("[INFO]    Processamento de dados por classe concluído.")
+        print('------------------------------------------------------')
         
     def filter_data(self, grupos=None):
         if grupos is None:
