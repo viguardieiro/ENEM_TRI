@@ -11,6 +11,8 @@ class GroupComparator():
         self.gp_feat = gp_feat
         self.gp_name = gp_name
         self.gp_map = gp_map
+        
+        self.base_path = "../Data/Processed/ENEM"+str(ano)+"/CR_data/"
 
         self.comp = comp
         self.ano = ano
@@ -28,11 +30,16 @@ class GroupComparator():
         self.questoes_list = None
     
     def get_df_gp(self):
+        concluintes_df = pd.read_csv(self.base_path+"CR_"+self.comp+".csv")
+        df_grupo = pd.read_csv("../Data/Processed/ENEM"+str(self.ano)+"/All_grupos.csv")
+        
         for g in self.gps:
             if g=='Geral':
-                df = pd.read_csv("../Data/Processed/ENEM"+self.ano+"/Concluintes_regulares_"+self.comp+".csv")
+                df = concluintes_df
             else:
-                df = pd.read_csv("../Data/Processed/ENEM"+self.ano+"/CR_"+self.gp_name+"_"+self.gp_map[g]+"_"+self.comp+".csv")
+                nu_grupo = df_grupo[df_grupo[self.gp_feat]==g]['NU_INSCRICAO'].tolist()
+                
+                df = concluintes_df[concluintes_df['NU_INSCRICAO'].isin(nu_grupo)]
 
             self.df_gp[g] = df
         return self.df_gp
@@ -64,7 +71,7 @@ class GroupComparator():
                 axs[r,c].hist(self.df_gp[self.gps[i]]['NU_NOTA_'+self.comp], bins=bins, color=colors[i])
                 
                 if i!=len(self.gps)-1:
-                    axs[r,c].set_title(self.gp_map[i])
+                    axs[r,c].set_title(self.gp_map[self.gps[i]])
                 else:
                     axs[r,c].set_title('Geral')
         
@@ -93,7 +100,7 @@ class GroupComparator():
         bins = np.arange(nota_min,nota_max,step)
 
         for g in self.gps:
-            self.df_gp[g]['Range'+self.comp] = pd.cut(self.df_gp[g]['NU_NOTA_'+self.comp], bins, right=False)
+            self.df_gp[g].loc[:,'Range'+self.comp] = pd.cut(self.df_gp[g]['NU_NOTA_'+self.comp], bins, right=False)
 
             bin_r = self.df_gp[g][self.df_gp[g]['NU_NOTA_'+self.comp]!=0].groupby('Range'+self.comp).count()[['NU_INSCRICAO']]
             bin_r = bin_r.rename(columns={'NU_INSCRICAO': 'Total'})
