@@ -131,11 +131,11 @@ class GroupComparator():
     
     def plot_item_compar(self, item):
         bin_item = self.bin_gp['Geral'][[item]]
-        bin_item = bin_item.rename(columns={item: 'Geral'})
+        bin_item = bin_item.rename(columns={item: 'All'})
         for g in self.gps[0:-1]:
             bin_item[self.gp_map[g]]  = self.bin_gp[g][item]
 
-        bin_item.plot(figsize=(8,6), style=['k--'],
-                      title='Proporção de acertos por nota por '+self.gp_name+' - '+self.comp+' '+item,
-                      xlabel='Nota', ylabel='Proporção de acertos')
+        bin_item.plot(style=['k--'],
+                      title='Proportion of hit given the score '+' - '+item,
+                      xlabel='Score', ylabel='Proportion of hit')
         plt.show()
