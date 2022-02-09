@@ -30,7 +30,8 @@ class ProcessEnemData():
             print("[INFO] Arquivo de dados não encontrado.")
             print("[INFO] Processando dados...")
             features = ['NU_INSCRICAO', 'TP_DEPENDENCIA_ADM_ESC', 'TP_ST_CONCLUSAO', 'TP_ENSINO',
-                        'CO_MUNICIPIO_RESIDENCIA', 'SG_UF_ESC', 'TP_SEXO', 'Q006', 'TP_COR_RACA',
+                        'CO_MUNICIPIO_RESIDENCIA', 'SG_UF_ESC', 'TP_SEXO', 'Q006', 'Q005',
+                        'TP_COR_RACA',
                         'TP_PRESENCA_CN',  'TP_PRESENCA_CH',  'TP_PRESENCA_LC',  'TP_PRESENCA_MT',
                         'NU_NOTA_CN',      'NU_NOTA_CH',      'NU_NOTA_LC',      'NU_NOTA_MT', 
                         'CO_PROVA_CN',     'CO_PROVA_CH',     'CO_PROVA_LC',     'CO_PROVA_MT', 
@@ -152,12 +153,9 @@ class ProcessEnemData():
             return df_comp
 
     def get_group_features(self, group_features=['NU_INSCRICAO','CO_MUNICIPIO_RESIDENCIA', 'SG_UF_ESC', 
-                                            'TP_SEXO','TP_COR_RACA','Q006','TP_DEPENDENCIA_ADM_ESC', 'TP_ENSINO'],
-                          gp_map_classe = {'E': ['A','B','C','D'],
-                                           'D': ['E','F','G'],
-                                           'C': ['H','I','J','K','L','M','N'],
-                                           'B': ['O','P'],
-                                           'A': ['Q']}):
+                                            'TP_SEXO','TP_COR_RACA','Q006','Q005','TP_DEPENDENCIA_ADM_ESC', 'TP_ENSINO'],
+                          renda_map = {'A': 0, 'B': 1, 'C': 1.5, 'D': 2, 'E': 2.5, 'F': 3, 'G': 4, 'H': 5,
+                                    'I': 6, 'J': 7, 'K': 8, 'L': 9, 'M':10, 'N':12, 'O':15, 'P':20, 'Q':100}):
         
         print("[INFO] Verificando processamento da tabela de grupos...")
         if Path("../Data/Processed/ENEM"+str(self.ano)+"/All_grupos.csv").exists():
@@ -171,15 +169,18 @@ class ProcessEnemData():
             
             df_grupo = enem_df[group_features].copy()
             df_grupo.rename(columns={'Q006': 'RENDA'}, inplace=True)
+            df_grupo.rename(columns={'Q005': 'PESSOAS_RESIDENCIA'}, inplace=True)
             df_grupo['REGIAO'] = df_grupo['CO_MUNICIPIO_RESIDENCIA'].apply(str).str[0]
             df_grupo['REGIAO'] = df_grupo['REGIAO'].replace('n', None)
             df_grupo['REGIAO'] = pd.to_numeric(df_grupo['REGIAO'])
             
-            df_grupo['CLASSE'] = 0
-            for classe in gp_map_classe.keys():
-                for renda in gp_map_classe[classe]:
-                    df_grupo.loc[df_grupo['RENDA']==renda,'CLASSE'] = classe
-
+            df_grupo['SAL_MIN'] = df_grupo['RENDA'].map(renda_map)
+            df_grupo['SAL_MIN'] = df_grupo['SAL_MIN']/df_grupo['PESSOAS_RESIDENCIA']
+            
+            df_grupo['CLASSE'] = 'baixa'
+            df_grupo.loc[df_grupo['SAL_MIN']>0.5,'CLASSE'] = 'média'
+            df_grupo.loc[df_grupo['SAL_MIN']>2,  'CLASSE'] = 'alta'
+                    
             df_grupo.to_csv("../Data/Processed/ENEM"+str(self.ano)+"/All_grupos.csv", index = False)
             print("[INFO]    Processamento da tabela de grupos concluído.")
             
@@ -207,34 +208,6 @@ class ProcessEnemData():
                     df_g.to_csv(self.base_path+gp_name+"/"+gp_name+"_"+gp_map[g]+"_"+comp+".csv", index=False)
                 print('---')
             print("[INFO]    Processamento de dados por "+gp_name+" concluído.")
-        print('------------------------------------------------------')
-        
-    def process_classe_renda(self, gp_map_classe = {'E': ['a','b','c','d'],
-                                                     'D': ['e','f','g'],
-                                                     'C': ['h','i','j','k','l','m','n'],
-                                                     'B': ['o','p'],
-                                                     'A': ['q']}):
-        Path(self.base_path+"classe").mkdir(parents=True, exist_ok=True)
-        print("[INFO] Verificando processamento de dados por classe...")
-        if Path(self.base_path+"classe/classe_A_LC.csv").exists():
-            print("[INFO]    Dados por classe já foram processados.")
-        else:
-            print("[INFO]    Dados por classe não foram encontrados.")
-            print("[INFO]    Processando dados por classe...")
-
-            for classe in gp_map_classe.keys():
-                print(f"[INFO] Processando classe {classe}...")
-                for comp in ['LC', 'CN', 'CH', 'MT']:
-                    classe_df = pd.DataFrame()
-                    for renda in gp_map_classe[classe]:
-                        renda_df = pd.read_csv(self.base_path+"/renda/renda_"+renda+"_"+comp+".csv")
-                        classe_df = classe_df.append(renda_df)
-                    print(f"[INFO]     Comeptência {comp}: {classe_df.shape[0]} concluintes regulares.")
-                    classe_df['CLASSE'] = classe
-                    classe_df.to_csv(self.base_path+"classe/classe_"+classe+"_"+comp+".csv", 
-                                     index=False)
-                print('---')
-            print("[INFO]    Processamento de dados por classe concluído.")
         print('------------------------------------------------------')
         
     def filter_data(self, grupos=None):
