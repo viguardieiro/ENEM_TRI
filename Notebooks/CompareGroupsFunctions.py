@@ -113,21 +113,34 @@ class GroupComparator():
 
         return self.bin_gp
 
-    def auc_groups(self):
+    def auc_groups(self, step=20):
         if self.questoes_list is None:
             self.questoes_list = list(self.bin_gp['Geral'].columns[1:])
         
         for g in self.gps:
-            self.auc_gp[g] = self.bin_gp[g][self.questoes_list].sum()
+            self.auc_gp[g] = self.bin_gp[g][self.questoes_list].sum()*step
 
         return self.auc_gp
+    
+    def auc_var(self):
+        auc_var = self.auc_gp[self.auc_gp.columns[:-1]].var(axis=1)/self.auc_gp['Geral']
+        sorted_auc_var = auc_var.sort_values()
+        return sorted_auc_var
+    
+    def auc_std(self):
+        auc_std = self.auc_gp[self.auc_gp.columns[:-1]].std(axis=1)/self.auc_gp['Geral']
+        sorted_auc_std = auc_std.sort_values()
+        return sorted_auc_std
 
     def sort_abs_auc_dif(self):
         auc_dif = self.auc_gp.diff(axis=1).abs().max(axis=1)/self.auc_gp['Geral']
         sorted_auc_dif = auc_dif.sort_values()
-        print(sorted_auc_dif)
+        #print(sorted_auc_dif)
         
         return sorted_auc_dif
+    
+    def favored_group(self):
+        return self.auc_gp[self.auc_gp.columns[:-1]].idxmax(axis=1)
     
     def plot_item_compar(self, item):
         bin_item = self.bin_gp['Geral'][[item]]
