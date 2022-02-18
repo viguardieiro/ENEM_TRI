@@ -93,7 +93,7 @@ class GroupComparator():
         plt.legend() 
         plt.show()
     
-    def bin_scores(self, nota_min=300, nota_max=760, step=20):
+    def bin_scores(self, nota_min=300, nota_max=800, step=20):
         if self.questoes_list is None:
             self.questoes_list = list(self.df_gp['Geral'].columns[2:])
 
