@@ -4,6 +4,9 @@ Data/Original/
 Data/.ipynb_checkpoints/
 Notebooks/.ipynb_checkpoints/
 Scripts/.ipynb_checkpoints/
+Images/
+Notebooks/stac/
+Notebooks/ipopt
 
 # Python files
 __pycache__/
