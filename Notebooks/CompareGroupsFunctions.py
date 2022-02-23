@@ -100,7 +100,7 @@ class GroupComparator():
         bins = np.arange(nota_min,nota_max,step)
 
         for g in self.gps:
-            self.df_gp[g]['Range'+self.comp] = pd.cut(self.df_gp[g]['NU_NOTA_'+self.comp], bins, right=False)
+            self.df_gp[g]['Range'+self.comp] = pd.cut(self.df_gp[g]['NU_NOTA_'+self.comp], bins)
 
             bin_r = self.df_gp[g][self.df_gp[g]['NU_NOTA_'+self.comp]!=0].groupby('Range'+self.comp).count()[['NU_INSCRICAO']]
             bin_r = bin_r.rename(columns={'NU_INSCRICAO': 'Total'})
