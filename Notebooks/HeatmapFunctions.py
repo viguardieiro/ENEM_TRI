@@ -118,10 +118,10 @@ def plot_all_hists(auc_std_ch, auc_std_cn, auc_std_mt, auc_std_esp, auc_std_ing,
     axc = plt.subplot2grid((4, 10), (0, 9), rowspan=3)
 
     plot_hist(auc_std_ch, auc_fav_ch, colors=colors, cmax=cmax, ax=ax1)
-    ax1.set_title("Human Sciences (CH)")
+    ax1.set_title("Human Sciences (HS)")
 
     plot_hist(auc_std_cn, auc_fav_cn, colors=colors, cmax=cmax, ax=ax2)
-    ax2.set_title("Natural Sciences (CN)")
+    ax2.set_title("Natural Sciences (NS)")
 
     plot_hist(auc_std_mt, auc_fav_mt, colors=colors, cmax=cmax, ax=ax3)
     ax3.set_title("Mathematics (MT)")
@@ -142,7 +142,7 @@ def plot_all_hists(auc_std_ch, auc_std_cn, auc_std_mt, auc_std_esp, auc_std_ing,
     cb1.outline.set_visible(False)
     axc.set_title("AUC Discrepancy")
 
-    ax4.legend(loc='upper center', bbox_to_anchor=(0.62, -0.15),
+    ax4.legend(loc='upper center', bbox_to_anchor=(0.62, -0.18),
               fancybox=True, shadow=True, ncol=8, handles=[marker_w, marker_m,
                        marker_wh, marker_br, marker_bl,
                        marker_li, marker_mi, marker_hi],
