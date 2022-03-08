@@ -49,3 +49,137 @@ def run_tests(auc_in, verbose=True):
         print(f"   {f[0][0]}: {f[2][0]:.3f}")
         
     return auc_pvalues
+
+def run_tests_par(icc_par, comp, feat='Race'):
+    if feat=='Gender':
+        print('Friedman test')
+        pvalue_dsc_race, _, pivots_dsc = friedman_test(icc_par['Gender'][comp]['Dscrmn_M'], 
+                                                       icc_par['Gender'][comp]['Dscrmn_F'])[1:4]
+        pvalue_dff_race, _, pivots_dff = friedman_test(icc_par['Gender'][comp]['Dffclt_M'], 
+                                                       icc_par['Gender'][comp]['Dffclt_F'])[1:4]
+        pvalue_gus_race, _, pivots_gus = friedman_test(icc_par['Gender'][comp]['Gussng_M'], 
+                                                       icc_par['Gender'][comp]['Gussng_F'])[1:4]
+
+        pivots_dsc_gender = {'M': pivots_dsc[0], 'F':  pivots_dsc[1]}
+        pivots_dff_gender = {'M': pivots_dff[0], 'F':  pivots_dff[1]}
+        pivots_gus_gender = {'M': pivots_gus[0], 'F':  pivots_gus[1]}
+
+        print(f"  p-value discrimination (a): {pvalue_dsc_race:.4f}")
+        print(f"  p-value difficulty (b): {pvalue_dff_race:.4f}")
+        print(f"  p-value guessing (c): {pvalue_gus_race:.4f}")
+        print()
+        
+        print('Finner test')
+        f = finner_test(pivots_dsc_gender)
+        print(f"discrimination (a)")
+        print(f"   {f[0][0]}: {f[2][0]:.3f}")
+        f = finner_test(pivots_dff_gender)
+        print(f"difficulty (b)")
+        print(f"   {f[0][0]}: {f[2][0]:.3f}")
+        f = finner_test(pivots_gus_gender)
+        print(f"guessing (c)")
+        print(f"   {f[0][0]}: {f[2][0]:.3f}")
+    
+    if feat=='Race':
+        print('Friedman test')
+        pvalue_dsc_race, _, pivots_dsc = friedman_test(icc_par['Race'][comp]['Dscrmn_1'], icc_par['Race'][comp]['Dscrmn_2'], 
+                                        icc_par['Race'][comp]['Dscrmn_3'])[1:4]
+        pvalue_dff_race, _, pivots_dff = friedman_test(icc_par['Race'][comp]['Dffclt_1'], icc_par['Race'][comp]['Dffclt_2'], 
+                                        icc_par['Race'][comp]['Dffclt_3'])[1:4]
+        pvalue_gus_race, _, pivots_gus = friedman_test(icc_par['Race'][comp]['Gussng_1'],icc_par['Race'][comp]['Gussng_2'], 
+                                                  icc_par['Race'][comp]['Gussng_3'])[1:4]
+        
+        pivots_dsc_race = {'White': pivots_dsc[0], 'Black':  pivots_dsc[1], 'Pardo':  pivots_dsc[2]}
+        pivots_dff_race = {'White': pivots_dff[0], 'Black':  pivots_dff[1], 'Pardo':  pivots_dff[2]}
+        pivots_gus_race = {'White': pivots_gus[0], 'Black':  pivots_gus[1], 'Pardo':  pivots_gus[2]}
+        
+        print(f"  p-value discrimination (a): {pvalue_dsc_race:.4f}")
+        print(f"  p-value difficulty (b): {pvalue_dff_race:.4f}")
+        print(f"  p-value guessing (c): {pvalue_gus_race:.4f}")
+        print()
+        
+        print('Finner test')
+        
+        f = finner_test(pivots_dsc_race)
+        print(f"discrimination (a)")
+        print(f"   {f[0][0]}: {f[2][0]:.3f}")
+        print(f"   {f[0][1]}: {f[2][1]:.3f}")
+        f = finner_test({'White': pivots_dsc[0], 'Pardo':  pivots_dsc[2]})
+        print(f"   {f[0][0]}: {f[2][0]:.3f}")
+        f = finner_test({'White': pivots_dsc[0], 'Black':  pivots_dsc[1]})
+        print(f"   {f[0][0]}: {f[2][0]:.3f}")
+        f = finner_test({'Black': pivots_dsc[1], 'Pardo':  pivots_dsc[2]})
+        print(f"   {f[0][0]}: {f[2][0]:.3f}")
+        
+        f = finner_test(pivots_dff_race)
+        print(f"difficulty (b)")
+        print(f"   {f[0][0]}: {f[2][0]:.3f}")
+        print(f"   {f[0][1]}: {f[2][1]:.3f}")
+        f = finner_test({'White': pivots_dff[0], 'Pardo':  pivots_dff[2]})
+        print(f"   {f[0][0]}: {f[2][0]:.3f}")
+        f = finner_test({'White': pivots_dff[0], 'Black':  pivots_dff[1]})
+        print(f"   {f[0][0]}: {f[2][0]:.3f}")
+        f = finner_test({'Black': pivots_dff[1], 'Pardo':  pivots_dff[2]})
+        print(f"   {f[0][0]}: {f[2][0]:.3f}")
+        
+        f = finner_test(pivots_gus_race)
+        print(f"guessing (c)")
+        print(f"   {f[0][0]}: {f[2][0]:.3f}")
+        print(f"   {f[0][1]}: {f[2][1]:.3f}")
+        f = finner_test({'White': pivots_gus[0], 'Pardo':  pivots_gus[2]})
+        print(f"   {f[0][0]}: {f[2][0]:.3f}")
+        f = finner_test({'White': pivots_gus[0], 'Black':  pivots_gus[1]})
+        print(f"   {f[0][0]}: {f[2][0]:.3f}")
+        f = finner_test({'Black': pivots_gus[1], 'Pardo':  pivots_gus[2]})
+        print(f"   {f[0][0]}: {f[2][0]:.3f}")
+        
+        
+    if feat=='Income':
+        print('Friedman test')
+        pvalue_dsc_income, _, pivots_dsc = friedman_test(icc_par['Income'][comp]['Dscrmn_alta'], 
+                                                         icc_par['Income'][comp]['Dscrmn_média'], 
+                                                         icc_par['Income'][comp]['Dscrmn_baixa'])[1:4]
+        pvalue_dff_income, _, pivots_dff = friedman_test(icc_par['Income'][comp]['Dffclt_alta'], 
+                                                         icc_par['Income'][comp]['Dffclt_média'], 
+                                                         icc_par['Income'][comp]['Dffclt_baixa'])[1:4]
+        pvalue_gus_income, _, pivots_gus = friedman_test(icc_par['Income'][comp]['Gussng_alta'], 
+                                                         icc_par['Income'][comp]['Gussng_média'], 
+                                                         icc_par['Income'][comp]['Gussng_baixa'])[1:4]
+
+        pivots_dsc_inc = {'High': pivots_dsc[0], 'Medium':  pivots_dsc[1], 'Low':  pivots_dsc[2]}
+        pivots_dff_inc = {'High': pivots_dff[0], 'Medium':  pivots_dff[1], 'Low':  pivots_dff[2]}
+        pivots_gus_inc = {'High': pivots_gus[0], 'Medium':  pivots_gus[1], 'Low':  pivots_gus[2]}
+
+        print(f"  p-value discrimination (a): {pvalue_dsc_income:.4f}")
+        print(f"  p-value difficulty (b): {pvalue_dff_income:.4f}")
+        print(f"  p-value guessing (c): {pvalue_gus_income:.4f}")
+        print()
+        
+        print('Finner test')
+        
+        f = finner_test(pivots_dsc_inc)
+        print(f"discrimination (a)")
+        print(f"   {f[0][0]}: {f[2][0]:.3f}")
+        print(f"   {f[0][1]}: {f[2][1]:.3f}")
+        f = finner_test({'High': pivots_dsc[0], 'Medium':  pivots_dsc[1]})
+        print(f"   {f[0][0]}: {f[2][0]:.3f}")
+        f = finner_test({'Medium':  pivots_dsc[1], 'Low': pivots_dsc[2]})
+        print(f"   {f[0][0]}: {f[2][0]:.3f}")
+        
+        f = finner_test(pivots_dff_inc)
+        print(f"difficulty (b)")
+        print(f"   {f[0][0]}: {f[2][0]:.3f}")
+        print(f"   {f[0][1]}: {f[2][1]:.3f}")
+        f = finner_test({'High': pivots_dff[0], 'Medium':  pivots_dff[1]})
+        print(f"   {f[0][0]}: {f[2][0]:.3f}")
+        f = finner_test({'Medium':  pivots_dff[1], 'Low': pivots_dff[2]})
+        print(f"   {f[0][0]}: {f[2][0]:.3f}")
+        
+        f = finner_test(pivots_gus_inc)
+        print(f"difficulty (b)")
+        print(f"   {f[0][0]}: {f[2][0]:.3f}")
+        print(f"   {f[0][1]}: {f[2][1]:.3f}")
+        f = finner_test({'High': pivots_gus[0], 'Medium':  pivots_gus[1]})
+        print(f"   {f[0][0]}: {f[2][0]:.3f}")
+        f = finner_test({'Medium':  pivots_gus[1], 'Low': pivots_gus[2]})
+        print(f"   {f[0][0]}: {f[2][0]:.3f}")
